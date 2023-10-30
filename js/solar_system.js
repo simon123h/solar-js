@@ -2,7 +2,7 @@
 var physics = {
     "G": 6.674e-11, // Graviational constant
     "length_scale": 1e9, // length scale
-    "dt": 60 * 60 * 24/12, // time step size
+    "dt": 60 * 60 * 24/2, // time step size
     "trace_age": 60 * 60 * 24 * 400,
     "time": 0,
     "substeps": 1,
