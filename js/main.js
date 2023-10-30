@@ -1,5 +1,7 @@
 
 $(document).ready(function () {
+    //add the asteroid belt
+    asteroid_belt();
     // add all the planets
     for (var planet in solar_system) {
         add_planet(planet, solar_system[planet]);
@@ -23,8 +25,20 @@ function add_planet(name, properties) {
     planet.style.width = `${p.radius * 2}px`;
     planet.style.height = `${p.radius * 2}px`;
     planet.style.margin = `-${p.radius}px`;
-    planet.innerHTML = `<span>${name}</span>`;
+    if (!name.startsWith("Asteroid"))
+        planet.innerHTML = `<span>${name}</span>`;
     canvas.appendChild(planet);
+}
+
+function asteroid_belt() {
+    for (var n = 0; n < 60; n++) {
+        solar_system["Asteroid" + n] = {
+            "color": "#888",
+            "mass": 1e15,
+            "radius": 1,
+            "orbitRadius": 4e11 * (1 + 0.1 * Math.random()),
+        }
+    }
 }
 
 function initial_condition() {
@@ -47,6 +61,8 @@ function initial_condition() {
         var force = physics.G * p1.mass * p2.mass / distance / distance;
         // compute velocity from equal graviational and centrifugal forces 
         var velocity = Math.sqrt(force * distance / p1.mass);
+        if (planet == "Sonne")
+            velocity = 0;
         // construct angle by rotating by 90deg
         var angle = Math.atan2(dy, dx) + Math.PI / 2;
         p1["velocity"] = { "x": velocity * Math.cos(angle), "y": velocity * Math.sin(angle) };
@@ -134,6 +150,8 @@ function manage_trace() {
     var time = physics.time;
     var max_age = physics.trace_age;
     for (var planet in solar_system) {
+        if (planet.startsWith("Asteroid"))
+            continue;
         var p = solar_system[planet];
         var pel = document.getElementById(planet);
         var tr = document.createElement("div");
