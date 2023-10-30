@@ -1,8 +1,8 @@
 
 $(document).ready(function () {
     // add all the planets
-    for (var planet in solar_system) {
-        add_planet(planet, solar_system[planet]);
+    for (var planet of solar_system) {
+        add_planet(planet);
     }
     // set the initial condition
     initial_condition();
@@ -13,58 +13,54 @@ $(document).ready(function () {
 })
 
 
-function add_planet(name, properties) {
+function add_planet(p) {
     var canvas = document.getElementById("canvas");
-    var p = properties;
-    var planet = document.createElement("div");
-    planet.setAttribute("id", name);
-    planet.setAttribute("class", "planet");
-    planet.style["background-color"] = p.color;
-    planet.style.width = `${p.radius * 2}px`;
-    planet.style.height = `${p.radius * 2}px`;
-    planet.style.margin = `-${p.radius}px`;
-    if (!name.startsWith("Asteroid"))
-        planet.innerHTML = `<span>${name}</span>`;
-    canvas.appendChild(planet);
-    p["element"] = planet;
+    var div = document.createElement("div");
+    div.setAttribute("id", p.name);
+    div.setAttribute("class", "planet");
+    div.style["background-color"] = p.color;
+    div.style.width = `${p.radius * 2}px`;
+    div.style.height = `${p.radius * 2}px`;
+    div.style.margin = `-${p.radius}px`;
+    if (!p.name.startsWith("Asteroid"))
+        div.innerHTML = `<span>${p.name}</span>`;
+    canvas.appendChild(div);
 }
 
 
 function initial_condition() {
-    for (var planet in solar_system) {
+    for (var planet of solar_system) {
         var angle = Math.random() * 2 * Math.PI;
-        var rad = solar_system[planet].orbitRadius;
-        solar_system[planet].x = rad * Math.sin(angle);
-        solar_system[planet].y = rad * Math.cos(angle);
+        var rad = planet.orbitRadius;
+        planet.x = rad * Math.sin(angle);
+        planet.y = rad * Math.cos(angle);
     }
     // update forces, to use them for initial velocity estimation
     update_forces();
     // estimate initial velocity
-    for (var planet in solar_system) {
-        var p1 = solar_system[planet];
-        var p2 = solar_system[p1.main_attractor];
-        var dx = p2.x - p1.x;
-        var dy = p2.y - p1.y;
+    for (var planet of solar_system) {
+        var attr = planet.main_attractor;
+        var dx = attr.x - planet.x;
+        var dy = attr.y - planet.y;
         var distance = Math.hypot(dx, dy);
         // gravitational force
-        var force = physics.G * p1.mass * p2.mass / distance / distance;
+        var force = physics.G * planet.mass * attr.mass / distance / distance;
         // compute velocity from equal graviational and centrifugal forces 
-        var velocity = Math.sqrt(force * distance / p1.mass);
-        if (planet == "Sonne")
+        var velocity = Math.sqrt(force * distance / planet.mass);
+        if (planet.name == "Sonne")
             velocity = 0;
         // construct angle by rotating by 90deg
         var angle = Math.atan2(dy, dx) + Math.PI / 2;
-        p1["v"] = { "x": velocity * Math.cos(angle), "y": velocity * Math.sin(angle) };
+        planet["v"] = { "x": velocity * Math.cos(angle), "y": velocity * Math.sin(angle) };
     }
 }
 
 async function update_positions() {
     var scale = physics.length_scale;
-    for (var planet in solar_system) {
-        var prop = solar_system[planet];
-        var p_elmnt = document.getElementById(planet);
-        p_elmnt.style.left = (prop.x / scale) + "px";
-        p_elmnt.style.top = (prop.y / scale) + "px";
+    for (var planet of solar_system) {
+        var p_elmnt = document.getElementById(planet.name);
+        p_elmnt.style.left = (planet.x / scale) + "px";
+        p_elmnt.style.top = (planet.y / scale) + "px";
     }
 }
 
@@ -110,21 +106,19 @@ function run_simulation() {
 
 function update_forces() {
     var G = physics.G;
-    for (var planet in solar_system) {
+    for (var planet of solar_system) {
         var fx = 0;
         var fy = 0;
         var max_force = 0;
         var main_attractor = null;
-        var p1 = solar_system[planet];
-        for (var planet2 in solar_system) {
-            if (planet == planet2)
+        for (var planet2 of solar_system) {
+            if (planet.name == planet2.name)
                 continue;
-            var p2 = solar_system[planet2];
-            var dx = p2.x - p1.x;
-            var dy = p2.y - p1.y;
+            var dx = planet2.x - planet.x;
+            var dy = planet2.y - planet.y;
             var distance = Math.hypot(dx, dy);
             // gravitational force
-            var force = G * p1.mass * p2.mass / distance / distance;
+            var force = G * planet.mass * planet2.mass / distance / distance;
             fx += force * dx / distance;
             fy += force * dy / distance;
             // store the main attractor
@@ -133,15 +127,14 @@ function update_forces() {
                 main_attractor = planet2;
             }
         }
-        solar_system[planet]["force"] = { "x": fx, "y": fy };
-        solar_system[planet]["main_attractor"] = main_attractor;
+        planet["force"] = { "x": fx, "y": fy };
+        planet["main_attractor"] = main_attractor;
     }
 }
 
 function integration_step() {
     var dt = physics.dt;
-    for (var planet in solar_system) {
-        var p = solar_system[planet];
+    for (var p of solar_system) {
         // store old values
         p["old_x"] = p.x;
         p["old_y"] = p.y;
@@ -154,8 +147,7 @@ function integration_step() {
         p.v.y += dt * p.force.y / p.mass;
     }
     update_forces();
-    for (var planet in solar_system) {
-        var p = solar_system[planet];
+    for (var p of solar_system) {
         // equations of motion (Heun step)
         p.x = 0.5 * (p.old_x + p.x + dt * p.v.x);
         p.y = 0.5 * (p.old_y + p.y + dt * p.v.y);
@@ -170,10 +162,10 @@ async function manage_trace() {
     var canvas = document.getElementById("canvas");
     var time = physics.time;
     var max_age = physics.trace_age;
-    for (var planet in solar_system) {
-        if (planet.startsWith("Asteroid"))
+    for (var planet of solar_system) {
+        if (planet.name.startsWith("Asteroid"))
             continue;
-        var pel = document.getElementById(planet);
+        var pel = document.getElementById(planet.name);
         var tr = document.createElement("div");
         tr.setAttribute("class", "trace");
         tr.setAttribute("time", time);
