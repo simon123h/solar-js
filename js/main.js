@@ -67,14 +67,16 @@ function run_simulation() {
     var n = 0;
     var simulation_intvl = setInterval(function () {
         n += 1;
-        // update the forces
-        update_forces();
-        // do integration step
-        integration_step();
+        for (var i = 0; i < physics.substeps; i++) {
+            // update the forces
+            update_forces();
+            // do integration step
+            integration_step();
+        }
         // update visualization
         update_positions();
         // manage trace
-        if (n % 5 == 0)
+        if (n % 2 == 0)
             manage_trace();
     }, 20);
     return simulation_intvl;
@@ -116,8 +118,6 @@ function update_forces() {
 function integration_step() {
     var dt = physics.dt;
     for (var planet in solar_system) {
-        if (planet == "Sun")
-            continue;
         var p = solar_system[planet];
         // equations of motion
         p.x += dt * p.velocity.x;
@@ -132,7 +132,7 @@ function integration_step() {
 function manage_trace() {
     var canvas = document.getElementById("canvas");
     var time = physics.time;
-    var max_age = 60 * 60 * 24 * 300;
+    var max_age = physics.trace_age;
     for (var planet in solar_system) {
         var p = solar_system[planet];
         var pel = document.getElementById(planet);
@@ -147,9 +147,7 @@ function manage_trace() {
     $(".trace").each(function () {
         var el_time = parseInt(this.getAttribute("time"));
         this.style.opacity = 1 - (time - el_time) / max_age;
-        if (time - el_time > max_age) {
-            console.log("remove")
+        if (time - el_time > max_age)
             $(this).remove();
-        }
     });
 }

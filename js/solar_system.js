@@ -2,8 +2,10 @@
 var physics = {
     "G": 6.674e-11, // Graviational constant
     "length_scale": 1e9, // length scale
-    "dt": 60 * 60 * 24, // time step size
-    "time": 0
+    "dt": 60 * 60 * 1, // time step size
+    "trace_age": 60 * 60 * 24 * 400,
+    "time": 0,
+    "substeps": 24,
 }
 
 var solar_system = {
@@ -37,12 +39,12 @@ var solar_system = {
         "radius": 5,
         "orbitRadius": 2.289e11
     },
-    // "Jupiter": {
-    //     "color": "#ff8c00",
-    //     "mass": 1.8986e27,
-    //     "radius": 5,
-    //     "orbitRadius": 7.793e11
-    // },
+    "Jupiter": {
+        "color": "#ff8c00",
+        "mass": 1.8986e27,
+        "radius": 5,
+        "orbitRadius": 7.793e11
+    },
     // "Saturn": {
     //     "color": "#ffff80",
     //     "mass": 5.6846e26,
