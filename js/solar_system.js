@@ -2,10 +2,11 @@
 var physics = {
     "G": 6.674e-11, // Graviational constant
     "length_scale": 1e9, // length scale
-    "dt": 60 * 60 * 1, // time step size
+    "dt": 60 * 60 * 24, // time step size
     "trace_age": 60 * 60 * 24 * 400,
     "time": 0,
-    "substeps": 24,
+    "substeps": 1,
+    "n_asteroids": 100,
 }
 
 var solar_system = {
@@ -15,6 +16,12 @@ var solar_system = {
         "radius": 12,
         "orbitRadius": 0,
     },
+    // "Sonne2": {
+    //     "color": "#f0f",
+    //     "mass": 1.988e29,
+    //     "radius": 12,
+    //     "orbitRadius": 5e10,
+    // },
     "Merkur": {
         "color": "#999999",
         "mass": 3.3011e23,
@@ -70,3 +77,13 @@ var solar_system = {
     //     "orbitRadius": 6.089e12
     // }
 };
+
+// add the asteroid belt
+for (var n = 0; n < physics.n_asteroids; n++) {
+    solar_system["Asteroid" + n] = {
+        "color": "#AAA",
+        "mass": 1e15,
+        "radius": 1,
+        "orbitRadius": 4e11 * (1 + 0.1 * Math.random()),
+    }
+}
