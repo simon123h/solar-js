@@ -1,0 +1,43 @@
+body {
+  margin: 0px;
+  background-color: #fff;
+}
+
+#canvas {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  background-color: #000;
+}
+
+.planet {
+  border-radius: 1000px;
+  display: flex;
+  position: relative;
+  text-align: center;
+  justify-content: center;
+  /* align-items: center; */
+  cursor: pointer;
+  background-color: #fff;
+  color: #888;
+  font-size: 14px;
+}
+
+.planet span {
+  position: relative;
+  top: -17px;
+}
+
+
+.trace {
+  position: relative;
+  border-radius: 100px;
+  display: flex;
+  width: 1px;
+  height: 1px;
+  margin: -0.5px;
+  background-color: #888;
+}
