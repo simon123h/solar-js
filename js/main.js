@@ -83,7 +83,10 @@ function run_simulation() {
     // update visualization
     update_positions();
     // manage trace
-    if (n % 5 == 0) manage_trace();
+    if (n % 5 == 0) {
+      // check_energy();
+      manage_trace();
+    }
   }, 20);
   return simulation_intvl;
 }
@@ -94,6 +97,7 @@ function update_forces() {
   for (var planet of solar_system) {
     var fx = 0;
     var fy = 0;
+    // var pot = 0;
     var max_force = -1;
     var main_attractor = null;
     for (var planet2 of solar_system) {
@@ -110,6 +114,7 @@ function update_forces() {
 
       fx += (force * dx) / distance;
       fy += (force * dy) / distance;
+      // pot += -force * distance;
       // store the main attractor
       if (force > max_force) {
         max_force = force;
@@ -117,6 +122,7 @@ function update_forces() {
       }
     }
     planet["force"] = { x: fx, y: fy };
+    // planet["E_pot"] = pot;
     planet["main_attractor"] = main_attractor;
   }
 }
@@ -179,3 +185,16 @@ function solar_dict() {
 
 // abbreviation for the solar system
 var ss = null;
+
+// var E0 = 0;
+// function check_energy() {
+//   var E = 0;
+//   for (var planet of solar_system) {
+//     var v = Math.hypot(planet.v.x, planet.v.y);
+//     E += 0.5 * planet.mass * v * v + planet.E_pot;
+//   }
+//   E += 1e38;
+//   if (E0 == 0) E0 = E;
+//   var inc = E / E0;
+//   console.log("Energy increase:", E / E0 - 1);
+// }
