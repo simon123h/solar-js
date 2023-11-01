@@ -3,19 +3,18 @@ var physics = {
   length_scale: 1e9, // length scale
   dt: 60 * 60 * 12, // time step size
   trace_age: 60 * 60 * 24 * 400,
-  time: 0,
   substeps: 1,
   n_asteroids: 400,
-  safety_factor: 1,
 };
 
-var solar_system = [
+var solar_system = generate_solar_system([
   {
     name: "Sonne",
     color: "#ff0",
     mass: 1.988e30,
     radius: 20,
-    orbitRadius: 0,
+    x: 0,
+    y: 0
   },
   // {
   //     "name": "Sonne2",
@@ -87,7 +86,7 @@ var solar_system = [
     radius: 5,
     orbitRadius: 6.089e12,
   },
-];
+]);
 
 // add the asteroid belt
 for (var n = 0; n < physics.n_asteroids; n++) {
@@ -97,5 +96,16 @@ for (var n = 0; n < physics.n_asteroids; n++) {
     mass: 1e15,
     radius: 1,
     orbitRadius: 4e11 * (1 + 0.05 * Math.random()),
+    is_dummy: true,
   });
 }
+
+// make all planets circle around the sun
+var sun = solar_system[0]; // sun should have index 0
+for (var planet of solar_system) {
+  if (planet == sun) continue;
+  circularize(planet, planet.orbitRadius, sun);
+}
+
+// convert to associative array
+s = solar_dict();
