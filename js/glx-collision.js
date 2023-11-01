@@ -1,16 +1,17 @@
 var physics = {
   G: 6.674e-11, // Graviational constant
   length_scale: 1e9, // length scale
-  dt: 60 * 60 * 12, // time step size
+  dt: 60 * 60 * 3, // time step size
   trace_age: 60 * 60 * 24 * 400,
-  n_asteroids: 200,
+  n_asteroids: 250,
+  substeps: 3,
 };
 
 var milchstrasse = {
   name: "Milchstraße",
   color: "#6ff",
   mass: 2e30,
-  radius: 10,
+  radius: 5,
   x: -300e9,
   y: 0,
   vx: 0,
@@ -21,7 +22,7 @@ var andromeda = {
   name: "Andromedagalaxie",
   color: "#ff6",
   mass: 3e30,
-  radius: 10,
+  radius: 5,
   x: 300e9,
   y: 0,
   vx: -2e3,

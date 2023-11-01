@@ -11,8 +11,9 @@ function run_simulation() {
   physics.n = 0;
   var simulation_intvl = setInterval(function () {
     physics.n += 1;
-    // do integration step
-    integration_step();
+    // do integration step(s)
+    for(var i=0; i<physics.substeps; i++)
+      integration_step();
     // update visualization
     drawGUI();
     // manage trace

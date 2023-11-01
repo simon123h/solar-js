@@ -5,6 +5,7 @@ var physics = {
   trace_age: -1,
   substeps: 1,
   n_asteroids: 400,
+  substeps: 1,
 };
 
 var solar_system = [];
@@ -12,7 +13,7 @@ var solar_system = [];
 // add the asteroid belt
 for (var n = 0; n < physics.n_asteroids; n++) {
   solar_system.push({
-    name: "Asteroid" + n,
+    name: "",
     color: "#AAA",
     mass: 1e15,
     radius: 1,

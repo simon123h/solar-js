@@ -1,10 +1,11 @@
 var physics = {
   G: 6.674e-11, // Graviational constant
   length_scale: 1e9, // length scale
-  dt: 60 * 60 * 12, // time step size
+  dt: 60 * 60 * 6, // time step size
   trace_age: 60 * 60 * 24 * 400,
   substeps: 1,
   n_asteroids: 400,
+  substeps: 2,
 };
 
 var solar_system = generate_solar_system([
