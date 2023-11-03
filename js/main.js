@@ -1,6 +1,6 @@
 $(document).ready(function () {
-  // draw all the planets
-  drawGUI();
+  // redraw the universe
+  redraw();
   // start the simulation
   run_simulation();
 });
@@ -12,13 +12,13 @@ function run_simulation() {
   var simulation_intvl = setInterval(function () {
     universe.physics.n += 1;
     // do integration step(s)
-    for(var i=0; i<universe.physics.substeps; i++)
+    for (var i = 0; i < universe.physics.substeps; i++)
       integration_step();
     // update visualization
-    drawGUI();
+    redraw();
     // manage trace
-    if (universe.physics.n % 5 == 0)
-      manage_trace();
+    // if (universe.physics.n % 5 == 0)
+    //   manage_trace();
     if (universe.physics.n % 10 == 0)
       do_stats();
   }, 20);
@@ -75,12 +75,29 @@ function integration_step() {
 }
 
 // update planet positions in the GUI
-async function drawGUI() {
+async function redraw() {
   var scale = universe.physics.length_scale;
+  var canvas = document.getElementById("canvas");
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  var ctx = canvas.getContext("2d");
+  // fill black
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+
   for await (var planet of universe.planets) {
-    if (planet.element == null) add_planet(planet);
-    planet.element.style.left = planet.x / scale + "px";
-    planet.element.style.top = planet.y / scale + "px";
+    ctx.beginPath();
+    ctx.fillStyle = planet.color;
+    var x = canvas.width / 2 + planet.x / scale;
+    var y = canvas.height / 2 + planet.y / scale;
+    ctx.arc(x, y, planet.radius, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#888";
+    if (!planet.is_dummy && planet.name != "")
+      ctx.fillText(planet.name, x, y-1.05*planet.radius-5);
   }
 }
 
@@ -144,9 +161,6 @@ var u = null;
 
 // load a different universe
 function change_universe(select) {
-  for (var planet of universe.planets)
-    planet.element = null;
-  document.getElementById("canvas").innerHTML = "";
   universe = universes[select.value];
   u = universe_dict();
 }
