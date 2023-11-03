@@ -1,14 +1,17 @@
-var physics = {
-  G: 6.674e-11, // Graviational constant
-  length_scale: 1e9, // length scale
-  dt: 60 * 60 * 6, // time step size
-  trace_age: 60 * 60 * 24 * 400,
-  substeps: 1,
-  n_asteroids: 400,
-  substeps: 2,
+var universe = {
+  planets: [],
+  physics: {
+    G: 6.674e-11, // Graviational constant
+    length_scale: 1e9, // length scale
+    dt: 60 * 60 * 6, // time step size
+    trace_age: 60 * 60 * 24 * 400,
+    substeps: 2,
+    n_asteroids: 400,
+  }
 };
 
-var solar_system = generate_solar_system([
+
+universe.planets = generate_planets([
   {
     name: "Sonne",
     color: "#ff0",
@@ -90,8 +93,8 @@ var solar_system = generate_solar_system([
 ]);
 
 // add the asteroid belt
-for (var n = 0; n < physics.n_asteroids; n++) {
-  solar_system.push({
+for (var n = 0; n < universe.physics.n_asteroids; n++) {
+  universe.planets.push({
     name: "Asteroid" + n,
     color: "#AAA",
     mass: 1e15,
@@ -102,11 +105,10 @@ for (var n = 0; n < physics.n_asteroids; n++) {
 }
 
 // make all planets circle around the sun
-var sun = solar_system[0]; // sun should have index 0
-for (var planet of solar_system) {
+var sun = universe.planets[0]; // sun should have index 0
+for (var planet of universe.planets) {
   if (planet == sun) continue;
   circularize(planet, planet.orbitRadius, sun);
 }
 
-// convert to associative array
-s = solar_dict();
+universes["solar-system"] = universe;

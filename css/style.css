@@ -62,3 +62,23 @@ body {
   padding: 4px;
   text-align: center;
 }
+
+#settings {
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  height: 20px;
+  background-color: rgba(255, 255, 255, 0.3);
+  color: black;
+  font-family: monospace;
+  font-size: 0.9em;
+  /* width: 200px; */
+  min-width: 60px;
+  padding: 4px;
+  text-align: center;
+}
+
+#settings select {
+  background: none;
+  border: none;
+}
