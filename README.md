@@ -1,7 +1,7 @@
 # SolarJS: N-body solar system simulation written in JavaScript
 
-<img src="img/solar-system.gif" alt="Solar System Simulation" width="50%"/>
+![Solar System Simulation](img/solar-system.gif)
 
-<img src="img/galaxy-collision.gif" alt="Galaxy Collision Simulation" width="50%"/>
+![Galaxy Collision Simulation](img/galaxy-collision.gif)
 
-<img src="img/n-body-universe.gif" alt="N-Body Problem Simulation" width="50%"/>
+![N-Body Problem Simulation](img/n-body-universe.gif)
