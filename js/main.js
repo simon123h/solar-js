@@ -1,4 +1,6 @@
 $(document).ready(function () {
+  // set the default universe
+  change_universe({ value: "solar-system" })
   // redraw the universe
   redraw();
   // start the simulation
