@@ -1,4 +1,4 @@
-# SolarJS: N-body solar system simulation written in JavaScript
+# Solar-JS: N-body solar system simulation written in JavaScript
 
 ![Solar System Simulation](img/solar-system.gif)
 
