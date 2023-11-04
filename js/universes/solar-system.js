@@ -13,7 +13,7 @@ var universe = {
 
 universe.planets = generate_planets([
   {
-    name: "Sonne",
+    name: "Sun",
     color: "#ff0",
     mass: 1.988e30,
     radius: 20,
@@ -22,14 +22,14 @@ universe.planets = generate_planets([
     y: 0
   },
   // {
-  //     "name": "Sonne2",
+  //     "name": "Sun2",
   //     "color": "#f0f",
   //     "mass": 1.988e29,
   //     "radius": 12,
   //     "orbitRadius": 5e10,
   // },
   {
-    name: "Merkur",
+    name: "Mercury",
     color: "#999999",
     mass: 3.3011e23,
     radius: 2,
@@ -43,7 +43,7 @@ universe.planets = generate_planets([
     orbitRadius: 1.082e11,
   },
   {
-    name: "Erde",
+    name: "Earth",
     color: "#0077ff",
     mass: 5.972e24,
     radius: 5,
@@ -78,7 +78,7 @@ universe.planets = generate_planets([
     orbitRadius: 2.874e12,
   },
   {
-    name: "Neptun",
+    name: "Neptune",
     color: "#4169e1",
     mass: 1.0243e26,
     radius: 5,

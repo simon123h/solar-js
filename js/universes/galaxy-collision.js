@@ -11,8 +11,8 @@ var universe = {
 };
 
 
-var milchstrasse = {
-  name: "Milchstraße",
+var milkyway = {
+  name: "Milky Way",
   color: "#6ff",
   mass: 2e30,
   radius: 5,
@@ -23,7 +23,7 @@ var milchstrasse = {
 };
 
 var andromeda = {
-  name: "Andromedagalaxie",
+  name: "Andromeda Galaxy",
   color: "#ff6",
   mass: 4e30,
   radius: 5,
@@ -33,7 +33,7 @@ var andromeda = {
   vy: -4e3,
 };
 
-universe.planets = [milchstrasse, andromeda];
+universe.planets = [milkyway, andromeda];
 
 for (var n = 0; n < universe.physics.n_asteroids; n++) {
   var planet = {
@@ -46,7 +46,7 @@ for (var n = 0; n < universe.physics.n_asteroids; n++) {
   };
   universe.planets.push(planet);
   var radius = 1e11 * (0.2 + Math.random());
-  circularize(planet, radius, milchstrasse, 0.9);
+  circularize(planet, radius, milkyway, 0.9);
 }
 
 for (var n = 0; n < universe.physics.n_asteroids; n++) {
@@ -64,7 +64,7 @@ for (var n = 0; n < universe.physics.n_asteroids; n++) {
 }
 
 // hightlight the earth
-universe.planets[2].name = "Erde";
+universe.planets[2].name = "Earth";
 universe.planets[2].color = "#0077ff";
 universe.planets[2].is_dummy = false;
 universe.planets[2].radius = 2;
