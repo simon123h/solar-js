@@ -17,6 +17,7 @@ universe.planets = generate_planets([
     color: "#ff0",
     mass: 1.988e30,
     radius: 20,
+    shadow: 10,
     x: 0,
     y: 0
   },

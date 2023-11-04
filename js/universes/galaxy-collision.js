@@ -41,6 +41,7 @@ for (var n = 0; n < universe.physics.n_asteroids; n++) {
     color: "#CCF",
     mass: 1e15,
     radius: 1,
+    shadow: 6,
     is_dummy: true,
   };
   universe.planets.push(planet);
@@ -54,6 +55,7 @@ for (var n = 0; n < universe.physics.n_asteroids; n++) {
     color: "#FFC",
     mass: 1e15,
     radius: 1,
+    shadow: 6,
     is_dummy: true,
   };
   universe.planets.push(planet);

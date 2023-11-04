@@ -3,10 +3,10 @@ var universe = {
   physics: {
     G: 6.674e-11, // Graviational constant
     length_scale: 1e1, // length scale
-    dt: (60 * 60 * 12) / 1e6, // time step size
-    trace_age: -1,
+    dt: (60 * 60 * 24) / 1e6, // time step size
+    trace_age: 10,
     substeps: 1,
-    n_asteroids: 400,
+    n_asteroids: 200,
     substeps: 1,
   }
 };
@@ -16,9 +16,9 @@ var universe = {
 for (var n = 0; n < universe.physics.n_asteroids; n++) {
   universe.planets.push({
     name: "",
-    color: "#AAA",
+    color: `hsl(${Math.random() * 360} 60% 70%)`,
     mass: 1e15,
-    radius: 2,
+    radius: 3,
     x: 800 * universe.physics.length_scale * (0.5 - Math.random()),
     y: 800 * universe.physics.length_scale * (0.5 - Math.random()),
   });

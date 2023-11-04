@@ -7,20 +7,21 @@ $(document).ready(function () {
 
 // runs the simulation loop
 function run_simulation() {
-  universe.physics.time = 0;
-  universe.physics.n = 0;
+  var n = 0;
   var simulation_intvl = setInterval(function () {
-    universe.physics.n += 1;
+    if (universe.physics.time == null) universe.physics.time = 0;
+    n += 1;
     // do integration step(s)
     for (var i = 0; i < universe.physics.substeps; i++)
       integration_step();
     // update visualization
     redraw();
     // manage trace
-    // if (universe.physics.n % 5 == 0)
-    //   manage_trace();
-    if (universe.physics.n % 10 == 0)
-      do_stats();
+    if (n % 5 == 0)
+      manage_trace();
+    // do statistics
+    if (n % 20 == 0)
+      do_stats(n);
   }, 20);
   return simulation_intvl;
 }
@@ -88,65 +89,63 @@ async function redraw() {
   ctx.textAlign = "center";
 
   for await (var planet of universe.planets) {
-    ctx.beginPath();
     ctx.fillStyle = planet.color;
+    if (planet.shadow != null) {
+      ctx.shadowColor = planet.color;
+      ctx.shadowBlur = planet.shadow;
+    }
     var x = canvas.width / 2 + planet.x / scale;
     var y = canvas.height / 2 + planet.y / scale;
+    ctx.beginPath();
     ctx.arc(x, y, planet.radius, 0, 2 * Math.PI);
     ctx.closePath();
     ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.fillStyle = "#888";
+    // draw label
     if (!planet.is_dummy && planet.name != "")
-      ctx.fillText(planet.name, x, y-1.05*planet.radius-5);
+      ctx.fillText(planet.name, x, y - 1.05 * planet.radius - 5);
+    // draw trace
+    if (!planet.is_dummy && planet.trace != null) {
+      ctx.strokeStyle = planet.color;
+      for (var i = planet.trace.length - 1; i >= 0; i--) {
+        var t = planet.trace[i];
+        ctx.globalAlpha = (1 - (universe.physics.time - t[0]) / universe.physics.trace_age) / 2;
+        var tx = canvas.width / 2 + t[1] / scale;
+        var ty = canvas.height / 2 + t[2] / scale;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+        x = tx;
+        y = ty;
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 }
 
-// add a planet to the GUI
-function add_planet(planet) {
-  var canvas = document.getElementById("canvas");
-  var div = document.createElement("div");
-  div.setAttribute("id", planet.name);
-  div.setAttribute("class", "planet");
-  div.style["background-color"] = planet.color;
-  div.style.width = `${planet.radius * 2}px`;
-  div.style.height = `${planet.radius * 2}px`;
-  div.style.margin = `-${planet.radius}px`;
-  if (!planet.is_dummy) div.innerHTML = `<span>${planet.name}</span>`;
-  canvas.appendChild(div);
-  planet.element = div;
-}
-
-// show the trace of the planets
+// update the trace points for each planet
 async function manage_trace() {
-  var canvas = document.getElementById("canvas");
   var time = universe.physics.time;
-  var max_age = universe.physics.trace_age;
+  var deltime = time - universe.physics.trace_age;
   for await (var planet of universe.planets) {
     if (planet.is_dummy) continue;
-    var tr = document.createElement("div");
-    tr.setAttribute("class", "trace");
-    tr.setAttribute("time", time);
-    tr.style.top = planet.element.style.top;
-    tr.style.left = planet.element.style.left;
-    tr.style.backgroundColor = planet.element.style.backgroundColor;
-    canvas.appendChild(tr);
+    if (planet.trace == null) planet.trace = [];
+    planet.trace = planet.trace.filter((t) => (t[0] >= deltime));
+    planet.trace.push([time, planet.x, planet.y]);
   }
-  $(".trace").each(function () {
-    var el_time = parseInt(this.getAttribute("time"));
-    this.style.opacity = 1 - (time - el_time) / max_age;
-    if (time - el_time > max_age) $(this).remove();
-  });
 }
 
 // compute and show statistics
 var _last_stats = {}
-async function do_stats() {
+async function do_stats(n) {
   var statsbox = document.getElementById("stats-box");
   var days = "Day " + (universe.physics.time / 60 / 60 / 24).toFixed(0);
   var now = performance.now()
-  var fps = (universe.physics.n - _last_stats.n) / (now - _last_stats.time) * 1000;
+  var fps = (n - _last_stats.n) / (now - _last_stats.time) * 1000;
   _last_stats.time = now;
-  _last_stats.n = universe.physics.n;
+  _last_stats.n = n;
   var fps = fps ? fps.toFixed(0) : "??";
   fps += " fps";
   statsbox.innerHTML = fps + "<br>" + days;
