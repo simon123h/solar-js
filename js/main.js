@@ -163,3 +163,11 @@ function change_universe(select) {
   universe = universes[select.value];
   u = universe_dict();
 }
+
+// make the canvas zoomable
+window.addEventListener("wheel", zoom_canvas);
+function zoom_canvas(event) {
+  universe.physics.length_scale *= (1 + event.deltaY / 2e4);
+  if (universe.physics.length_scale < 1e6)
+    universe.physics.length_scale = 1e6;
+}
