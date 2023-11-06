@@ -6,7 +6,7 @@ var universe = {
     dt: (60 * 60 * 24) / 1e6, // time step size
     trace_age: 10,
     substeps: 1,
-    n_asteroids: 200,
+    n_asteroids: 300,
     substeps: 1,
   }
 };

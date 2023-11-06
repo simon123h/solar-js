@@ -1,6 +1,6 @@
 $(document).ready(function () {
   // set the default universe
-  change_universe({ value: "solar-system" })
+  change_universe({ value: "solar-system" });
   // redraw the universe
   redraw();
   // start the simulation
@@ -19,11 +19,9 @@ function run_simulation() {
     // update visualization
     redraw();
     // manage trace
-    if (n % 5 == 0)
-      manage_trace();
+    if (n % 5 == 0) manage_trace();
     // do statistics
-    if (n % 20 == 0)
-      do_stats(n);
+    if (n % 20 == 0) do_stats(n);
   }, 20);
   return simulation_intvl;
 }
@@ -31,23 +29,40 @@ function run_simulation() {
 // update the gravitational forces for all planets
 function update_forces() {
   // double loop over all planets
+  var start = performance.now();
   var G = universe.physics.G;
-  for (var p1 of universe.planets) {
-    p1.ax = p1.ay = 0;
-    for (var p2 of universe.planets) {
-      if (p1 == p2 || p2.is_dummy) continue;
+  // reset forces
+  for (var planet of universe.planets) {
+    planet.ax = planet.ay = 0;
+  }
+  // split planets into dummy-planets and nondummy-planets
+  var dummy = universe.planets.filter((p) => p.is_dummy);
+  var nondummy = universe.planets.filter((p) => !p.is_dummy);
+  var ndl = nondummy.length;
+  var dl = dummy.length;
+  // loop over planet-planet interactions, but exclude dummy-dummy interactions
+  for (var i = 0; i < ndl; i++) {
+    var p1 = nondummy[i];
+    for (var j = i + 1; j < ndl + dl; j++) {
+      var p2 = j < ndl ? nondummy[j] : dummy[j - ndl];
       // compute distance between planets
       var dx = p2.x - p1.x;
       var dy = p2.y - p1.y;
       var distance = Math.hypot(dx, dy);
       // make sure distance is not too close
-      distance = Math.max(distance, (p1.radius + p2.radius) * universe.physics.length_scale)
-      // gravitational acceleration (force divided by mass)
-      var acc = (G * p2.mass) / distance / distance;
-      p1.ax += acc * dx / distance;
-      p1.ay += acc * dy / distance;
+      distance = Math.max(
+        distance,
+        (p1.radius + p2.radius) * universe.physics.length_scale,
+      );
+      // gravitational force
+      var f = (G * p1.mass * p2.mass) / distance / distance;
+      p1.ax += (f * dx) / distance / p1.mass;
+      p1.ay += (f * dy) / distance / p1.mass;
+      p2.ax -= (f * dx) / distance / p2.mass;
+      p2.ay -= (f * dy) / distance / p2.mass;
     }
   }
+  _last_stats.force_time += performance.now() - start;
 }
 
 // do an integration step
@@ -112,7 +127,8 @@ async function redraw() {
       ctx.strokeStyle = planet.color;
       for (var i = planet.trace.length - 1; i >= 0; i--) {
         var t = planet.trace[i];
-        ctx.globalAlpha = (1 - (universe.physics.time - t[0]) / universe.physics.trace_age) / 2;
+        ctx.globalAlpha =
+          (1 - (universe.physics.time - t[0]) / universe.physics.trace_age) / 2;
         var tx = canvas.width / 2 + t[1] / scale;
         var ty = canvas.height / 2 + t[2] / scale;
         ctx.beginPath();
@@ -134,25 +150,26 @@ async function manage_trace() {
   for await (var planet of universe.planets) {
     if (planet.is_dummy) continue;
     if (planet.trace == null) planet.trace = [];
-    planet.trace = planet.trace.filter((t) => (t[0] >= deltime));
+    planet.trace = planet.trace.filter((t) => t[0] >= deltime);
     planet.trace.push([time, planet.x, planet.y]);
   }
 }
 
 // compute and show statistics
-var _last_stats = {}
+var _last_stats = {};
 async function do_stats(n) {
   var statsbox = document.getElementById("stats-box");
   var days = "Day " + (universe.physics.time / 60 / 60 / 24).toFixed(0);
-  var now = performance.now()
-  var fps = (n - _last_stats.n) / (now - _last_stats.time) * 1000;
+  var now = performance.now();
+  var fps = ((n - _last_stats.n) / (now - _last_stats.time)) * 1000;
   _last_stats.time = now;
   _last_stats.n = n;
   var fps = fps ? fps.toFixed(0) : "??";
   fps += " fps";
+  var ft = Math.round(_last_stats.force_time / 4) + "%<br>";
   statsbox.innerHTML = fps + "<br>" + days;
+  _last_stats.force_time = 0;
 }
-
 
 // registry of all available universes
 var universes = {};
@@ -169,7 +186,6 @@ function change_universe(select) {
 // make the canvas zoomable
 window.addEventListener("wheel", zoom_canvas);
 function zoom_canvas(event) {
-  universe.physics.length_scale *= (1 + event.deltaY / 2e4);
-  if (universe.physics.length_scale < 1e6)
-    universe.physics.length_scale = 1e6;
+  universe.physics.length_scale *= 1 + event.deltaY / 2e4;
+  if (universe.physics.length_scale < 1e6) universe.physics.length_scale = 1e6;
 }
