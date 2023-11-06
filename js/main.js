@@ -31,6 +31,7 @@ function update_forces() {
   // double loop over all planets
   var start = performance.now();
   var G = universe.physics.G;
+  var radius_bbox = (universe.physics.bbox == null) ? 1 : universe.physics.bbox;
   // reset forces
   for (var planet of universe.planets) {
     planet.ax = planet.ay = 0;
@@ -52,7 +53,7 @@ function update_forces() {
       // make sure distance is not too close
       distance = Math.max(
         distance,
-        (p1.radius + p2.radius) * universe.physics.length_scale,
+        radius_bbox * (p1.radius + p2.radius) * universe.physics.length_scale,
       );
       // gravitational force
       var f = (G * p1.mass * p2.mass) / distance / distance;
@@ -65,29 +66,26 @@ function update_forces() {
   _last_stats.force_time += performance.now() - start;
 }
 
-// do an integration step
+// do an integration step (Velocity Verlet method)
 function integration_step() {
   var dt = universe.physics.dt;
+  var dt2 = dt / 2;
+  // update forces (acceleration)
   update_forces();
   for (var p of universe.planets) {
-    // store old values
-    p.old_x = p.x;
-    p.old_y = p.y;
-    p.old_vx = p.vx;
-    p.old_vy = p.vy;
-    // equations of motion (Euler step)
-    p.x += dt * p.vx;
-    p.y += dt * p.vy;
-    p.vx += dt * p.ax;
-    p.vy += dt * p.ay;
-  }
-  update_forces();
-  for (var p of universe.planets) {
-    // equations of motion (Heun step)
-    p.x = 0.5 * (p.old_x + p.x + dt * p.vx);
-    p.y = 0.5 * (p.old_y + p.y + dt * p.vy);
-    p.vx = 0.5 * (p.old_vx + p.vx + dt * p.ax);
-    p.vy = 0.5 * (p.old_vy + p.vy + dt * p.ay);
+    // auxiliary values
+    var dt2pax = dt2 * p.ax;
+    var dt2pay = dt2 * p.ay;
+    // second bit of velocity step (here done first for performance)
+    p.vx += dt2pax;
+    p.vy += dt2pay;
+    // do spatial step
+    p.x += dt * (p.vx + dt2pax);
+    p.y += dt * (p.vy + dt2pay);
+    // first bit of velocity step (done second for performance)
+    p.vx += dt2pax;
+    p.vy += dt2pay;
+    // NOTE: this weird order results in the velocities always being wrong!
   }
   universe.physics.time += dt;
 }
@@ -186,6 +184,8 @@ function change_universe(select) {
 // make the canvas zoomable
 window.addEventListener("wheel", zoom_canvas);
 function zoom_canvas(event) {
-  universe.physics.length_scale *= 1 + event.deltaY / 2e4;
-  if (universe.physics.length_scale < 1e6) universe.physics.length_scale = 1e6;
+  var zoom_factor = 1 + event.deltaY / 2e4;
+  universe.physics.length_scale *= zoom_factor;
+  if (universe.physics.bbox == null) universe.physics.bbox = 1;
+  universe.physics.bbox /= zoom_factor;
 }

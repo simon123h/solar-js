@@ -5,7 +5,7 @@ var universe = {
     length_scale: 1e9, // length scale
     dt: 60 * 60 * 3, // time step size
     trace_age: 60 * 60 * 24 * 400,
-    n_asteroids: 250,
+    n_asteroids: 500,
     substeps: 3,
   }
 };
