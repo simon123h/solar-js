@@ -1,11 +1,11 @@
-$(document).ready(function () {
+document.addEventListener('DOMContentLoaded', function () {
   // set the default universe
   change_universe({ value: "solar-system" });
   // redraw the universe
   redraw();
   // start the simulation
   run_simulation();
-});
+}, false);
 
 // runs the simulation loop
 function run_simulation() {
