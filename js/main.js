@@ -165,7 +165,7 @@ async function do_stats(n) {
   var fps = fps ? fps.toFixed(0) : "??";
   fps += " fps";
   var ft = Math.round(_last_stats.force_time / 4) + "%<br>";
-  statsbox.innerHTML = fps + "<br>" + ft + days;
+  statsbox.innerHTML = fps + "<br>" + days;
   _last_stats.force_time = 0;
 }
 
