@@ -49,18 +49,18 @@ function update_forces() {
       // compute distance between planets
       var dx = p2.x - p1.x;
       var dy = p2.y - p1.y;
-      var distance = Math.hypot(dx, dy);
+      var distance = Math.sqrt(dx*dx + dy*dy);
       // make sure distance is not too close
       distance = Math.max(
         distance,
         radius_bbox * (p1.radius + p2.radius) * universe.physics.length_scale,
       );
-      // gravitational force
-      var f = (G * p1.mass * p2.mass) / distance / distance;
-      p1.ax += (f * dx) / distance / p1.mass;
-      p1.ay += (f * dy) / distance / p1.mass;
-      p2.ax -= (f * dx) / distance / p2.mass;
-      p2.ay -= (f * dy) / distance / p2.mass;
+      // gravitational acceleration for both planets
+      var f = G / distance / distance / distance;
+      p1.ax += f * dx * p2.mass;
+      p1.ay += f * dy * p2.mass;
+      p2.ax -= f * dx * p1.mass;
+      p2.ay -= f * dy * p1.mass;
     }
   }
   _last_stats.force_time += performance.now() - start;
@@ -165,7 +165,7 @@ async function do_stats(n) {
   var fps = fps ? fps.toFixed(0) : "??";
   fps += " fps";
   var ft = Math.round(_last_stats.force_time / 4) + "%<br>";
-  statsbox.innerHTML = fps + "<br>" + days;
+  statsbox.innerHTML = fps + "<br>" + ft + days;
   _last_stats.force_time = 0;
 }
 
