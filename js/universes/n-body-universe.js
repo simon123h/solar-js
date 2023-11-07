@@ -14,14 +14,11 @@ var universe = {
 
 // add the asteroid belt
 for (var n = 0; n < universe.physics.n_asteroids; n++) {
-  var ang = Math.random() * 2 * Math.PI;
   universe.planets.push({
     name: "",
     color: `hsl(${Math.random() * 360} 60% 70%)`,
     mass: 1e15,
     radius: 3,
-    // x: 300 * universe.physics.length_scale * (0.2+Math.random()) * Math.sin(ang),
-    // y: 300 * universe.physics.length_scale * (0.2+Math.random()) * Math.cos(ang),
     x: 800 * universe.physics.length_scale * (0.5 - Math.random()),
     y: 800 * universe.physics.length_scale * (0.5 - Math.random()),
   });
