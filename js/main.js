@@ -49,7 +49,7 @@ function update_forces() {
       // compute distance between planets
       var dx = p2.x - p1.x;
       var dy = p2.y - p1.y;
-      var distance = Math.sqrt(dx*dx + dy*dy);
+      var distance = Math.sqrt(dx * dx + dy * dy);
       // make sure distance is not too close
       distance = Math.max(
         distance,
@@ -173,12 +173,13 @@ async function do_stats(n) {
 var universes = {};
 // currently selected universe
 var universe = null;
+// associative array of current universe's planets
 var u = null;
 
 // load a different universe
 function change_universe(select) {
   universe = universes[select.value];
-  u = universe_dict();
+  u = universe.as_dict();
 }
 
 // make the canvas zoomable

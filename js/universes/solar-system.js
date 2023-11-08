@@ -1,17 +1,13 @@
-var universe = {
-  planets: [],
-  physics: {
-    G: 6.674e-11, // Graviational constant
-    length_scale: 1e9, // length scale
-    dt: 60 * 60 * 6, // time step size
-    trace_age: 60 * 60 * 24 * 400,
-    substeps: 2,
-    n_asteroids: 400,
-  }
-};
+var universe = new Universe()
+universe.physics.G = 6.674e-11;
+universe.physics.length_scale = 1e9;
+universe.physics.dt = 60 * 60 * 6;
+universe.physics.trace_age = 60 * 60 * 24 * 400;
+universe.physics.substeps = 2;
+universe.physics.n_asteroids = 400;
 
 
-universe.planets = generate_planets([
+universe.generate_planets([
   {
     name: "Sun",
     color: "#ff0",
@@ -95,18 +91,18 @@ universe.planets = generate_planets([
 
 // add the asteroid belt
 for (var n = 0; n < universe.physics.n_asteroids; n++) {
-  universe.planets.push({
+  universe.generate_planets([{
     name: "Asteroid" + n,
     color: "#AAA",
     mass: 1e15,
     radius: 1,
     orbitRadius: 4e11 * (1 + 0.05 * Math.random()),
     is_dummy: true,
-  });
+  }]);
 }
 
 // make all planets circle around the sun
-var sun = universe.planets[0]; // sun should have index 0
+var sun = universe.get_planet_by_name("Sun") // sun should have index 0
 for (var planet of universe.planets) {
   if (planet == sun) continue;
   circularize(planet, planet.orbitRadius, sun);

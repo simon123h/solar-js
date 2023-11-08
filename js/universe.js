@@ -1,3 +1,46 @@
+class Universe {
+    constructor() {
+        this.planets = [] // array of planets in the universe
+        this.physics = {
+            G: 6.674e-11, // graviational constant
+            length_scale: 1e9, // length scale
+            dt: 60 * 60 * 6, // time step size
+            trace_age: 60 * 60 * 24 * 400, // length of traces in the visualization
+            substeps: 1, // number of time steps per frame
+        }
+    }
+
+    // generate list of Planet objects from a list of planet specs (a list of associative arrays)
+    generate_planets(planet_specs) {
+        for (var p of planet_specs) {
+            var planet = new Planet(p.name, p.mass, p.radius, p.color);
+            // copy all the other properties (NOTE: this is a bit hacky, maybe remove at some point)
+            for (var prop in p)
+                planet[prop] = p[prop];
+            this.planets.push(planet);
+        }
+    }
+
+    // return the planets as an associative dict, makes debugging easier
+    as_dict() {
+        var result = {};
+        for (var planet of universe.planets) {
+            if (planet.name == "") continue;
+            result[planet.name] = planet;
+        }
+        return result;
+    }
+
+    // find a planet by its name
+    get_planet_by_name(name) {
+        for (var planet of this.planets) {
+            if (planet.name == name)
+                return planet
+        }
+        return null;
+    }
+}
+
 class Planet {
     constructor(name, mass, radius, color = "#fff") {
         this.name = name; // name
@@ -21,31 +64,8 @@ class Planet {
     E_kin() { return 0.5 * this.mass * (Math.pow(this.vx, 2) + Math.pow(this.vy, 2)); }
 }
 
-
-// generate list of Planet objects from a list of planet specs (a list of associative arrays)
-function generate_planets(planet_specs) {
-    var u = [];
-    for (var p of planet_specs) {
-        var planet = new Planet(p.name, p.mass, p.radius, p.color);
-        // copy all the other properties (NOTE: this is a bit hacky, maybe remove at some point)
-        for (var prop in p)
-            planet[prop] = p[prop];
-        u.push(planet);
-    }
-    return u;
-}
-
-// converts the list of planets to an associative array of planets with their names as keys
-function universe_dict() {
-    var result = {};
-    for (var planet of universe.planets) {
-        result[planet.name] = planet;
-    }
-    return result;
-}
-
 // put planet on a circular orbit around another planet (attractor)
-function circularize(planet, orbit_radius, attractor, sign=1) {
+function circularize(planet, orbit_radius, attractor, sign = 1) {
     // if attractor is a list of planets, compute their graviational center
     if (attractor.constructor === Array) {
         var new_attr = { x: 0, y: 0, mass: 0 };
