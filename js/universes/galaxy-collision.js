@@ -5,7 +5,7 @@ import { Universe } from "../universe.js";
  * @returns {Universe} The created Universe instance configured with two colliding galaxies.
  */
 export default function createGalaxyCollisionUniverse() {
-  var universe = new Universe();
+  const universe = new Universe();
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e9;
   universe.physics.dt = 60 * 60 * 3;
@@ -13,7 +13,7 @@ export default function createGalaxyCollisionUniverse() {
   universe.physics.substeps = 3;
   universe.physics.n_asteroids = 500;
 
-  var milkyway = {
+  const milkyway = {
     name: "Milky Way",
     color: "#6ff",
     mass: 2e30,
@@ -24,7 +24,7 @@ export default function createGalaxyCollisionUniverse() {
     vy: 4e3,
   };
 
-  var andromeda = {
+  const andromeda = {
     name: "Andromeda Galaxy",
     color: "#ff6",
     mass: 4e30,
@@ -37,8 +37,8 @@ export default function createGalaxyCollisionUniverse() {
 
   universe.generate_planets([milkyway, andromeda]);
 
-  for (var n = 0; n < universe.physics.n_asteroids; n++) {
-    var planet = {
+  for (let n = 0; n < universe.physics.n_asteroids; n++) {
+    const planet = {
       name: "MW" + n,
       color: "#CCF",
       mass: 1e15,
@@ -46,13 +46,13 @@ export default function createGalaxyCollisionUniverse() {
       shadow: 6,
       is_dummy: true,
     };
-    var radius = 1e11 * (0.2 + Math.random());
+    const radius = 1e11 * (0.2 + Math.random());
     universe.circularize(planet, radius, milkyway, 0.9);
     universe.generate_planets([planet]);
   }
 
-  for (var n = 0; n < universe.physics.n_asteroids; n++) {
-    var planet = {
+  for (let n = 0; n < universe.physics.n_asteroids; n++) {
+    const planet = {
       name: "AG" + n,
       color: "#FFC",
       mass: 1e15,
@@ -60,7 +60,7 @@ export default function createGalaxyCollisionUniverse() {
       shadow: 6,
       is_dummy: true,
     };
-    var radius = 1e11 * (0.2 + Math.random());
+    const radius = 1e11 * (0.2 + Math.random());
     universe.circularize(planet, radius, andromeda, 0.9);
     universe.generate_planets([planet]);
   }

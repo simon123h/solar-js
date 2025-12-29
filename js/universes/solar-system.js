@@ -5,7 +5,7 @@ import { Universe } from "../universe.js";
  * @returns {Universe} The created Universe instance configured with solar system planets.
  */
 export default function createSolarSystem() {
-  var universe = new Universe();
+  const universe = new Universe();
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e9;
   universe.physics.dt = 60 * 60 * 6;
@@ -96,7 +96,7 @@ export default function createSolarSystem() {
   ]);
 
   // add the asteroid belt
-  for (var n = 0; n < universe.physics.n_asteroids; n++) {
+  for (let n = 0; n < universe.physics.n_asteroids; n++) {
     universe.generate_planets([
       {
         name: "Asteroid" + n,
@@ -110,8 +110,8 @@ export default function createSolarSystem() {
   }
 
   // make all planets circle around the sun
-  var sun = universe.get_planet_by_name("Sun"); // sun should have index 0
-  for (var planet of universe.planets) {
+  const sun = universe.get_planet_by_name("Sun"); // sun should have index 0
+  for (const planet of universe.planets) {
     if (planet == sun) continue;
     // We can assume orbitRadius is present because we just added it in generate_planets
     if (planet.orbitRadius) {

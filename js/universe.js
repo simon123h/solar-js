@@ -42,10 +42,10 @@ export class Universe {
    * @param {Array<Object>} planet_specs - List of objects containing planet properties.
    */
   generate_planets(planet_specs) {
-    for (var p of planet_specs) {
-      var planet = new Planet(p.name, p.mass, p.radius, p.color);
+    for (const p of planet_specs) {
+      const planet = new Planet(p.name, p.mass, p.radius, p.color);
       // copy all the other properties (NOTE: this is a bit hacky, maybe remove at some point)
-      for (var prop in p) planet[prop] = p[prop];
+      for (const prop in p) planet[prop] = p[prop];
       this.planets.push(planet);
     }
   }
@@ -55,8 +55,8 @@ export class Universe {
    * @returns {Object.<string, Planet>} A dictionary where keys are planet names and values are Planet objects.
    */
   as_dict() {
-    var result = {};
-    for (var planet of this.planets) {
+    const result = {};
+    for (const planet of this.planets) {
       if (planet.name == "") continue;
       result[planet.name] = planet;
     }
@@ -69,7 +69,7 @@ export class Universe {
    * @returns {Planet|null} The found Planet object or null if not found.
    */
   get_planet_by_name(name) {
-    for (var planet of this.planets) {
+    for (const planet of this.planets) {
       if (planet.name == name) return planet;
     }
     return null;
@@ -85,8 +85,8 @@ export class Universe {
   circularize(planet, orbit_radius, attractor, sign = 1) {
     // if attractor is a list of planets, compute their graviational center
     if (attractor.constructor === Array) {
-      var new_attr = { x: 0, y: 0, mass: 0 };
-      for (var a of attractor) {
+      let new_attr = { x: 0, y: 0, mass: 0 };
+      for (const a of attractor) {
         new_attr.mass += a.mass;
         new_attr.x += a.mass * a.x;
         new_attr.y += a.mass * a.y;
@@ -96,11 +96,11 @@ export class Universe {
       attractor = new_attr;
     }
     // put planet somewhere on the orbit
-    var angle = Math.random() * 2 * Math.PI;
+    let angle = Math.random() * 2 * Math.PI;
     planet.x = attractor.x + orbit_radius * Math.cos(angle);
     planet.y = attractor.y + orbit_radius * Math.sin(angle);
     // compute the velocity from the equality of graviational and centripetal forces
-    var velocity = Math.sqrt((this.physics.G * attractor.mass) / orbit_radius);
+    const velocity = Math.sqrt((this.physics.G * attractor.mass) / orbit_radius);
     // construct angle from rotating force vector by 90deg
     angle -= (Math.PI / 2) * sign;
     planet.vx = velocity * Math.cos(angle);
@@ -112,31 +112,31 @@ export class Universe {
    */
   update_forces() {
     // double loop over all planets
-    var start = performance.now();
-    var G = this.physics.G;
-    var radius_bbox = this.physics.bbox == null ? 1 : this.physics.bbox;
+    const start = performance.now();
+    const G = this.physics.G;
+    const radius_bbox = this.physics.bbox == null ? 1 : this.physics.bbox;
     // reset forces
-    for (var planet of this.planets) {
+    for (const planet of this.planets) {
       planet.ax = planet.ay = 0;
     }
     // split planets into dummy-planets and nondummy-planets
-    var dummy = this.planets.filter((p) => p.is_dummy);
-    var nondummy = this.planets.filter((p) => !p.is_dummy);
-    var ndl = nondummy.length;
-    var dl = dummy.length;
+    const dummy = this.planets.filter((p) => p.is_dummy);
+    const nondummy = this.planets.filter((p) => !p.is_dummy);
+    const ndl = nondummy.length;
+    const dl = dummy.length;
     // loop over planet-planet interactions, but exclude dummy-dummy interactions
-    for (var i = 0; i < ndl; i++) {
-      var p1 = nondummy[i];
-      for (var j = i + 1; j < ndl + dl; j++) {
-        var p2 = j < ndl ? nondummy[j] : dummy[j - ndl];
+    for (let i = 0; i < ndl; i++) {
+      const p1 = nondummy[i];
+      for (let j = i + 1; j < ndl + dl; j++) {
+        const p2 = j < ndl ? nondummy[j] : dummy[j - ndl];
         // compute distance between planets
-        var dx = p2.x - p1.x;
-        var dy = p2.y - p1.y;
-        var distance = Math.sqrt(dx * dx + dy * dy);
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        let distance = Math.sqrt(dx * dx + dy * dy);
         // make sure distance is not too close
         distance = Math.max(distance, radius_bbox * (p1.radius + p2.radius) * this.physics.length_scale);
         // gravitational acceleration for both planets
-        var f = G / distance / distance / distance;
+        const f = G / distance / distance / distance;
         p1.ax += f * dx * p2.mass;
         p1.ay += f * dy * p2.mass;
         p2.ax -= f * dx * p1.mass;
@@ -150,14 +150,14 @@ export class Universe {
    * Performs a single integration step using the Velocity Verlet method.
    */
   integration_step() {
-    var dt = this.physics.dt;
-    var dt2 = dt / 2;
+    const dt = this.physics.dt;
+    const dt2 = dt / 2;
     // update forces (acceleration)
     this.update_forces();
-    for (var p of this.planets) {
+    for (const p of this.planets) {
       // auxiliary values
-      var dt2pax = dt2 * p.ax;
-      var dt2pay = dt2 * p.ay;
+      const dt2pax = dt2 * p.ax;
+      const dt2pay = dt2 * p.ay;
       // second bit of velocity step (here done first for performance)
       p.vx += dt2pax;
       p.vy += dt2pay;
@@ -176,9 +176,9 @@ export class Universe {
    * Updates the trace points for each planet.
    */
   manage_trace() {
-    var time = this.physics.time;
-    var deltime = time - this.physics.trace_age;
-    for (var planet of this.planets) {
+    const time = this.physics.time;
+    const deltime = time - this.physics.trace_age;
+    for (const planet of this.planets) {
       if (planet.is_dummy) continue;
       if (planet.trace == null) planet.trace = [];
       planet.trace = planet.trace.filter((t) => t[0] >= deltime);

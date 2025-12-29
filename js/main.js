@@ -54,14 +54,14 @@ if (document.readyState === "loading") {
  * Starts the simulation loop.
  */
 function run_simulation() {
-  var n = 0;
+  let n = 0;
   if (simulationInterval) clearInterval(simulationInterval);
 
   simulationInterval = setInterval(function () {
     if (!currentUniverse) return;
     n += 1;
     // do integration step(s)
-    for (var i = 0; i < currentUniverse.physics.substeps; i++) {
+    for (let i = 0; i < currentUniverse.physics.substeps; i++) {
       currentUniverse.integration_step();
     }
     // update visualization
@@ -79,29 +79,29 @@ function run_simulation() {
  */
 async function redraw() {
   if (!currentUniverse) return;
-  var scale = currentUniverse.physics.length_scale;
-  var canvas = document.getElementById("canvas");
+  const scale = currentUniverse.physics.length_scale;
+  const canvas = document.getElementById("canvas");
   // Basic resizing logic
   if (canvas.width !== canvas.offsetWidth || canvas.height !== canvas.offsetHeight) {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
   }
 
-  var ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d");
   // fill black
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.font = "12px sans-serif";
   ctx.textAlign = "center";
 
-  for (var planet of currentUniverse.planets) {
+  for (const planet of currentUniverse.planets) {
     ctx.fillStyle = planet.color;
     if (planet.shadow != null) {
       ctx.shadowColor = planet.color;
       ctx.shadowBlur = planet.shadow;
     }
-    var x = canvas.width / 2 + planet.x / scale;
-    var y = canvas.height / 2 + planet.y / scale;
+    let x = canvas.width / 2 + planet.x / scale;
+    let y = canvas.height / 2 + planet.y / scale;
     ctx.beginPath();
     ctx.arc(x, y, planet.radius, 0, 2 * Math.PI);
     ctx.closePath();
@@ -113,11 +113,11 @@ async function redraw() {
     // draw trace
     if (!planet.is_dummy && planet.trace != null) {
       ctx.strokeStyle = planet.color;
-      for (var i = planet.trace.length - 1; i >= 0; i--) {
-        var t = planet.trace[i];
+      for (let i = planet.trace.length - 1; i >= 0; i--) {
+        const t = planet.trace[i];
         ctx.globalAlpha = (1 - (currentUniverse.physics.time - t[0]) / currentUniverse.physics.trace_age) / 2;
-        var tx = canvas.width / 2 + t[1] / scale;
-        var ty = canvas.height / 2 + t[2] / scale;
+        const tx = canvas.width / 2 + t[1] / scale;
+        const ty = canvas.height / 2 + t[2] / scale;
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(tx, ty);
@@ -136,17 +136,17 @@ async function redraw() {
  */
 function do_stats(n) {
   if (!currentUniverse) return;
-  var statsbox = document.getElementById("stats-box");
-  var days = "Day " + (currentUniverse.physics.time / 60 / 60 / 24).toFixed(0);
-  var now = performance.now();
-  var fps = ((n - _last_stats.n) / (now - _last_stats.time)) * 1000;
+  const statsbox = document.getElementById("stats-box");
+  const days = "Day " + (currentUniverse.physics.time / 60 / 60 / 24).toFixed(0);
+  const now = performance.now();
+  let fps = ((n - _last_stats.n) / (now - _last_stats.time)) * 1000;
   _last_stats.time = now;
   _last_stats.n = n;
   fps = fps ? fps.toFixed(0) : "??";
   fps += " fps";
 
   // Stats logic ported from original
-  var ft = Math.round(currentUniverse.stats.force_time / 4) + "%<br>";
+  const ft = Math.round(currentUniverse.stats.force_time / 4) + "%<br>";
   statsbox.innerHTML = fps + "<br>" + days + "<br>Load: " + ft;
 
   // Reset force_time accumulator
@@ -158,7 +158,7 @@ function do_stats(n) {
  * @param {HTMLSelectElement | {value: string}} select - The select element or object with a value property.
  */
 function change_universe(select) {
-  var factory = universeFactories[select.value];
+  const factory = universeFactories[select.value];
   if (factory) {
     currentUniverse = factory();
     // Reset stats to avoid huge spikes or weirdness
@@ -174,7 +174,7 @@ function change_universe(select) {
  */
 function zoom_canvas(event) {
   if (!currentUniverse) return;
-  var zoom_factor = 1 + event.deltaY / 2e4;
+  const zoom_factor = 1 + event.deltaY / 2e4;
   currentUniverse.physics.length_scale *= zoom_factor;
   if (currentUniverse.physics.bbox == null) currentUniverse.physics.bbox = 1;
   currentUniverse.physics.bbox /= zoom_factor;
