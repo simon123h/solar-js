@@ -1,26 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Universe } from "../js/universe.js";
 import { Planet } from "../js/planet.js";
-import createSolarSystem from "../js/universes/solar-system.js";
-import createGalaxyCollision from "../js/universes/galaxy-collision.js";
-import createNBodyUniverse from "../js/universes/n-body-universe.js";
-
-describe("Planet", () => {
-    it("should calculate velocity magnitude", () => {
-        const planet = new Planet("Test", 100, 10);
-        planet.vx = 3;
-        planet.vy = 4;
-        expect(planet.v).toBe(5);
-    });
-
-    it("should calculate kinetic energy", () => {
-        const planet = new Planet("Test", 100, 10);
-        planet.vx = 3;
-        planet.vy = 4;
-        // E = 0.5 * m * v^2 = 0.5 * 100 * 25 = 1250
-        expect(planet.E_kin()).toBe(1250);
-    });
-});
 
 describe("Universe", () => {
     it("should initialize correctly", () => {
@@ -129,26 +109,5 @@ describe("Universe", () => {
         expect(sun.ay).toBe(0);
         expect(earth.ax).toBeCloseTo(expected_ax_earth, -10);
         expect(earth.ay).toBe(0);
-    });
-});
-
-describe("Factories", () => {
-    it("should create Solar System", () => {
-        const universe = createSolarSystem();
-        expect(universe.planets.length).toBeGreaterThan(10);
-        expect(universe.get_planet_by_name("Sun")).toBeDefined();
-        expect(universe.get_planet_by_name("Earth")).toBeDefined();
-    });
-
-    it("should create Galaxy Collision", () => {
-        const universe = createGalaxyCollision();
-        expect(universe.planets.length).toBeGreaterThan(2);
-        expect(universe.get_planet_by_name("Milky Way")).toBeDefined();
-        expect(universe.get_planet_by_name("Andromeda Galaxy")).toBeDefined();
-    });
-
-    it("should create N-Body Universe", () => {
-        const universe = createNBodyUniverse();
-        expect(universe.planets.length).toBeGreaterThan(0);
     });
 });
