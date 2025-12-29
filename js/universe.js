@@ -24,7 +24,7 @@ class Universe {
     // return the planets as an associative dict, makes debugging easier
     as_dict() {
         var result = {};
-        for (var planet of universe.planets) {
+        for (var planet of this.planets) {
             if (planet.name == "") continue;
             result[planet.name] = planet;
         }
