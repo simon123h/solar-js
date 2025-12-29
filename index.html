@@ -9,19 +9,14 @@
       src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"
       type="text/javascript"
     ></script> -->
-    <script src="js/universe.js" type="text/javascript"></script>
-    <script src="js/main.js" type="text/javascript"></script>
-    <!-- load the different universes -->
-    <script src="js/universes/n-body-universe.js" type="text/javascript"></script>
-    <script src="js/universes/galaxy-collision.js" type="text/javascript"></script>
-    <script src="js/universes/solar-system.js" type="text/javascript"></script>
+    <script type="module" src="js/main.js"></script>
   </head>
   <body>
     <canvas id="canvas"></canvas>
     <div id="details-view"></div>
     <div id="stats-box">loading...</div>
     <div id="settings">
-      <select id="universe-select" onchange="change_universe(this)">
+      <select id="universe-select">
         <option value="solar-system">Solar System</option>
         <option value="galaxy-collision">Galaxy Collision</option>
         <option value="n-body-universe">N-Body Problem</option>
