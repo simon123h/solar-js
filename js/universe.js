@@ -95,10 +95,7 @@ export class Universe {
         var dy = p2.y - p1.y;
         var distance = Math.sqrt(dx * dx + dy * dy);
         // make sure distance is not too close
-        distance = Math.max(
-          distance,
-          radius_bbox * (p1.radius + p2.radius) * this.physics.length_scale,
-        );
+        distance = Math.max(distance, radius_bbox * (p1.radius + p2.radius) * this.physics.length_scale);
         // gravitational acceleration for both planets
         var f = G / distance / distance / distance;
         p1.ax += f * dx * p2.mass;

@@ -64,10 +64,10 @@ async function redraw() {
   var canvas = document.getElementById("canvas");
   // Basic resizing logic
   if (canvas.width !== canvas.offsetWidth || canvas.height !== canvas.offsetHeight) {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
   }
-  
+
   var ctx = canvas.getContext("2d");
   // fill black
   ctx.fillStyle = "black";
@@ -121,11 +121,11 @@ function do_stats(n) {
   _last_stats.n = n;
   fps = fps ? fps.toFixed(0) : "??";
   fps += " fps";
-  
+
   // Stats logic ported from original
   var ft = Math.round(currentUniverse.stats.force_time / 4) + "%<br>";
   statsbox.innerHTML = fps + "<br>" + days + "<br>Load: " + ft;
-  
+
   // Reset force_time accumulator
   currentUniverse.stats.force_time = 0;
 }

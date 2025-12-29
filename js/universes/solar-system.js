@@ -111,7 +111,7 @@ export default function createSolarSystem() {
     if (planet == sun) continue;
     // We can assume orbitRadius is present because we just added it in generate_planets
     if (planet.orbitRadius) {
-       universe.circularize(planet, planet.orbitRadius, sun);
+      universe.circularize(planet, planet.orbitRadius, sun);
     }
   }
 
