@@ -1,13 +1,10 @@
-var universe = new Universe()
+var universe = new Universe();
 universe.physics.G = 6.674e-11;
 universe.physics.length_scale = 1e9;
 universe.physics.dt = 60 * 60 * 3;
 universe.physics.trace_age = 60 * 60 * 24 * 400;
 universe.physics.substeps = 3;
 universe.physics.n_asteroids = 500;
-
-
-
 
 var milkyway = {
   name: "Milky Way",

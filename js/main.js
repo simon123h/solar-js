@@ -1,11 +1,15 @@
-document.addEventListener('DOMContentLoaded', function () {
-  // set the default universe
-  change_universe({ value: "solar-system" });
-  // redraw the universe
-  redraw();
-  // start the simulation
-  run_simulation();
-}, false);
+document.addEventListener(
+  "DOMContentLoaded",
+  function () {
+    // set the default universe
+    change_universe({ value: "solar-system" });
+    // redraw the universe
+    redraw();
+    // start the simulation
+    run_simulation();
+  },
+  false,
+);
 
 // runs the simulation loop
 function run_simulation() {
@@ -14,8 +18,7 @@ function run_simulation() {
     if (universe.physics.time == null) universe.physics.time = 0;
     n += 1;
     // do integration step(s)
-    for (var i = 0; i < universe.physics.substeps; i++)
-      integration_step();
+    for (var i = 0; i < universe.physics.substeps; i++) integration_step();
     // update visualization
     redraw();
     // manage trace
@@ -31,7 +34,7 @@ function update_forces() {
   // double loop over all planets
   var start = performance.now();
   var G = universe.physics.G;
-  var radius_bbox = (universe.physics.bbox == null) ? 1 : universe.physics.bbox;
+  var radius_bbox = universe.physics.bbox == null ? 1 : universe.physics.bbox;
   // reset forces
   for (var planet of universe.planets) {
     planet.ax = planet.ay = 0;
@@ -51,10 +54,7 @@ function update_forces() {
       var dy = p2.y - p1.y;
       var distance = Math.sqrt(dx * dx + dy * dy);
       // make sure distance is not too close
-      distance = Math.max(
-        distance,
-        radius_bbox * (p1.radius + p2.radius) * universe.physics.length_scale,
-      );
+      distance = Math.max(distance, radius_bbox * (p1.radius + p2.radius) * universe.physics.length_scale);
       // gravitational acceleration for both planets
       var f = G / distance / distance / distance;
       p1.ax += f * dx * p2.mass;
@@ -118,15 +118,13 @@ async function redraw() {
     ctx.shadowBlur = 0;
     ctx.fillStyle = "#888";
     // draw label
-    if (!planet.is_dummy && planet.name != "")
-      ctx.fillText(planet.name, x, y - 1.05 * planet.radius - 5);
+    if (!planet.is_dummy && planet.name != "") ctx.fillText(planet.name, x, y - 1.05 * planet.radius - 5);
     // draw trace
     if (!planet.is_dummy && planet.trace != null) {
       ctx.strokeStyle = planet.color;
       for (var i = planet.trace.length - 1; i >= 0; i--) {
         var t = planet.trace[i];
-        ctx.globalAlpha =
-          (1 - (universe.physics.time - t[0]) / universe.physics.trace_age) / 2;
+        ctx.globalAlpha = (1 - (universe.physics.time - t[0]) / universe.physics.trace_age) / 2;
         var tx = canvas.width / 2 + t[1] / scale;
         var ty = canvas.height / 2 + t[2] / scale;
         ctx.beginPath();
