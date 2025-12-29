@@ -1,22 +1,46 @@
-import { Planet } from "./planet";
+import { Planet } from "./planet.js";
 
+/**
+ * Represents the simulation universe containing planets and physics settings.
+ */
 export class Universe {
+  /**
+   * Creates a new Universe instance.
+   */
   constructor() {
-    this.planets = []; // array of planets in the universe
+    /** @type {Planet[]} planets - Array of planets in the universe. */
+    this.planets = [];
+    /**
+     * @type {object} physics - Physics configuration and state.
+     * @property {number} G - Gravitational constant.
+     * @property {number} length_scale - Length scale for visualization.
+     * @property {number} dt - Time step size in seconds.
+     * @property {number} time - Current simulation time in seconds.
+     * @property {number} trace_age - Length of traces in the visualization in seconds.
+     * @property {number} substeps - Number of time steps per frame.
+     * @property {number} [bbox] - Bounding box scaling factor.
+     */
     this.physics = {
-      G: 6.674e-11, // graviational constant
-      length_scale: 1e9, // length scale
-      dt: 60 * 60 * 6, // time step size
-      time: 0, // current simulation time
-      trace_age: 60 * 60 * 24 * 400, // length of traces in the visualization
-      substeps: 1, // number of time steps per frame
+      G: 6.674e-11,
+      length_scale: 1e9,
+      dt: 60 * 60 * 6,
+      time: 0,
+      trace_age: 60 * 60 * 24 * 400,
+      substeps: 1,
     };
+    /**
+     * @type {object} stats - Simulation statistics.
+     * @property {number} force_time - Time spent calculating forces.
+     */
     this.stats = {
       force_time: 0,
     };
   }
 
-  // generate list of Planet objects from a list of planet specs (a list of associative arrays)
+  /**
+   * Generates a list of Planet objects from a list of planet specifications.
+   * @param {Array<Object>} planet_specs - List of objects containing planet properties.
+   */
   generate_planets(planet_specs) {
     for (var p of planet_specs) {
       var planet = new Planet(p.name, p.mass, p.radius, p.color);
@@ -26,7 +50,10 @@ export class Universe {
     }
   }
 
-  // return the planets as an associative dict, makes debugging easier
+  /**
+   * Returns the planets as an associative dictionary for easier debugging.
+   * @returns {Object.<string, Planet>} A dictionary where keys are planet names and values are Planet objects.
+   */
   as_dict() {
     var result = {};
     for (var planet of this.planets) {
@@ -36,7 +63,11 @@ export class Universe {
     return result;
   }
 
-  // find a planet by its name
+  /**
+   * Finds a planet by its name.
+   * @param {string} name - The name of the planet to find.
+   * @returns {Planet|null} The found Planet object or null if not found.
+   */
   get_planet_by_name(name) {
     for (var planet of this.planets) {
       if (planet.name == name) return planet;
@@ -44,7 +75,13 @@ export class Universe {
     return null;
   }
 
-  // put planet on a circular orbit around another planet (attractor)
+  /**
+   * Puts a planet on a circular orbit around another planet (attractor).
+   * @param {Planet} planet - The planet to orbit.
+   * @param {number} orbit_radius - The radius of the orbit.
+   * @param {Planet|Array<Planet>} attractor - The planet(s) to orbit around. If an array, orbits the center of mass.
+   * @param {number} [sign=1] - The direction of orbit (1 for counter-clockwise, -1 for clockwise).
+   */
   circularize(planet, orbit_radius, attractor, sign = 1) {
     // if attractor is a list of planets, compute their graviational center
     if (attractor.constructor === Array) {
@@ -70,7 +107,9 @@ export class Universe {
     planet.vy = velocity * Math.sin(angle);
   }
 
-  // update the gravitational forces for all planets
+  /**
+   * Updates the gravitational forces for all planets.
+   */
   update_forces() {
     // double loop over all planets
     var start = performance.now();
@@ -107,7 +146,9 @@ export class Universe {
     this.stats.force_time += performance.now() - start;
   }
 
-  // do an integration step (Velocity Verlet method)
+  /**
+   * Performs a single integration step using the Velocity Verlet method.
+   */
   integration_step() {
     var dt = this.physics.dt;
     var dt2 = dt / 2;
@@ -131,7 +172,9 @@ export class Universe {
     this.physics.time += dt;
   }
 
-  // update the trace points for each planet
+  /**
+   * Updates the trace points for each planet.
+   */
   manage_trace() {
     var time = this.physics.time;
     var deltime = time - this.physics.trace_age;

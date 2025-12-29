@@ -1,5 +1,9 @@
 import { Universe } from "../universe.js";
 
+/**
+ * Creates an N-Body problem universe.
+ * @returns {Universe} The created Universe instance configured with random bodies.
+ */
 export default function createNBodyUniverse() {
   var universe = new Universe();
   universe.physics.G = 6.674e-11;

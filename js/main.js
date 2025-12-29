@@ -2,20 +2,33 @@ import createSolarSystem from "./universes/solar-system.js";
 import createGalaxyCollision from "./universes/galaxy-collision.js";
 import createNBodyUniverse from "./universes/n-body-universe.js";
 
+/** @type {Object.<string, Function>} Dictionary of universe factory functions. */
 const universeFactories = {
   "solar-system": createSolarSystem,
   "galaxy-collision": createGalaxyCollision,
   "n-body-universe": createNBodyUniverse,
 };
 
+/** @type {import("./universe.js").Universe | null} Current active universe instance. */
 let currentUniverse = null;
+
+/** @type {number | null} Interval ID for the simulation loop. */
 let simulationInterval = null;
+
+/**
+ * @type {object} _last_stats - Statistics state.
+ * @property {number} n - Number of frames processed.
+ * @property {number} time - Last time statistics were updated.
+ */
 let _last_stats = {
   n: 0,
   time: performance.now(),
 };
 
-// Main entry point
+/**
+ * Initializes the application.
+ * Sets up event listeners and starts the default simulation.
+ */
 function init() {
   const universeSelect = document.getElementById("universe-select");
   universeSelect.addEventListener("change", (e) => change_universe(e.target));
@@ -37,6 +50,9 @@ if (document.readyState === "loading") {
   init();
 }
 
+/**
+ * Starts the simulation loop.
+ */
 function run_simulation() {
   var n = 0;
   if (simulationInterval) clearInterval(simulationInterval);
@@ -57,7 +73,10 @@ function run_simulation() {
   }, 20);
 }
 
-// update planet positions in the GUI
+/**
+ * Redraws the universe visualization on the canvas.
+ * @async
+ */
 async function redraw() {
   if (!currentUniverse) return;
   var scale = currentUniverse.physics.length_scale;
@@ -111,6 +130,10 @@ async function redraw() {
   }
 }
 
+/**
+ * Updates the statistics display.
+ * @param {number} n - The current frame count.
+ */
 function do_stats(n) {
   if (!currentUniverse) return;
   var statsbox = document.getElementById("stats-box");
@@ -130,6 +153,10 @@ function do_stats(n) {
   currentUniverse.stats.force_time = 0;
 }
 
+/**
+ * Changes the active universe based on the user's selection.
+ * @param {HTMLSelectElement | {value: string}} select - The select element or object with a value property.
+ */
 function change_universe(select) {
   var factory = universeFactories[select.value];
   if (factory) {
@@ -141,6 +168,10 @@ function change_universe(select) {
   }
 }
 
+/**
+ * Handles mouse wheel events to zoom the canvas.
+ * @param {WheelEvent} event - The mouse wheel event.
+ */
 function zoom_canvas(event) {
   if (!currentUniverse) return;
   var zoom_factor = 1 + event.deltaY / 2e4;

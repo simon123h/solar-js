@@ -1,5 +1,9 @@
 import { Universe } from "../universe.js";
 
+/**
+ * Creates a galaxy collision universe.
+ * @returns {Universe} The created Universe instance configured with two colliding galaxies.
+ */
 export default function createGalaxyCollisionUniverse() {
   var universe = new Universe();
   universe.physics.G = 6.674e-11;

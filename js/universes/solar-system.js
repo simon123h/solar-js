@@ -1,5 +1,9 @@
 import { Universe } from "../universe.js";
 
+/**
+ * Creates a solar system universe.
+ * @returns {Universe} The created Universe instance configured with solar system planets.
+ */
 export default function createSolarSystem() {
   var universe = new Universe();
   universe.physics.G = 6.674e-11;
