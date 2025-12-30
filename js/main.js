@@ -1,6 +1,7 @@
 import createSolarSystem from "./universes/solar-system.js";
 import createGalaxyCollision from "./universes/galaxy-collision.js";
 import createNBodyUniverse from "./universes/n-body-universe.js";
+import { Universe } from "./universe.js";
 
 /** @type {Object.<string, Function>} Dictionary of universe factory functions. */
 const universeFactories = {
@@ -9,7 +10,7 @@ const universeFactories = {
   "n-body-universe": createNBodyUniverse,
 };
 
-/** @type {import("./universe.js").Universe | null} Current active universe instance. */
+/** @type {Universe | null} Current active universe instance. */
 let currentUniverse = null;
 
 /** @type {number | null} Interval ID for the simulation loop. */
