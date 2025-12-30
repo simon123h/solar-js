@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { Universe } from "../js/universe.js";
-import { Planet } from "../js/planet.js";
+import { Universe } from "../js/universe";
+import { Planet } from "../js/planet";
 
 describe("Universe", () => {
   it("should initialize correctly", () => {
@@ -72,13 +72,13 @@ describe("Universe", () => {
 
     universe.manage_trace();
     expect(p1.trace).toBeDefined();
-    expect(p1.trace.length).toBe(1);
+    expect(p1.trace?.length).toBe(1);
 
     // Advance time and trace again
     universe.physics.time += 1000;
     p1.x = 10;
     universe.manage_trace();
-    expect(p1.trace.length).toBe(2);
+    expect(p1.trace?.length).toBe(2);
   });
 
   it("should calculate gravitational forces correctly", () => {

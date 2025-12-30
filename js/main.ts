@@ -1,27 +1,30 @@
-import createSolarSystem from "./universes/solar-system.js";
-import createGalaxyCollision from "./universes/galaxy-collision.js";
-import createNBodyUniverse from "./universes/n-body-universe.js";
-import { Universe } from "./universe.js";
+import createSolarSystem from "./universes/solar-system";
+import createGalaxyCollision from "./universes/galaxy-collision";
+import createNBodyUniverse from "./universes/n-body-universe";
+import { Universe } from "./universe";
 
-/** @type {Object.<string, Function>} Dictionary of universe factory functions. */
-const universeFactories = {
+type UniverseFactory = () => Universe;
+
+/** Dictionary of universe factory functions. */
+const universeFactories: Record<string, UniverseFactory> = {
   "solar-system": createSolarSystem,
   "galaxy-collision": createGalaxyCollision,
   "n-body-universe": createNBodyUniverse,
 };
 
-/** @type {Universe | null} Current active universe instance. */
-let currentUniverse = null;
+/** Current active universe instance. */
+let currentUniverse: Universe | null = null;
 
-/** @type {number | null} Interval ID for the simulation loop. */
-let simulationInterval = null;
+/** Interval ID for the simulation loop. */
+let simulationInterval: number | null = null;
 
-/**
- * @type {object} _last_stats - Statistics state.
- * @property {number} n - Number of frames processed.
- * @property {number} time - Last time statistics were updated.
- */
-let _last_stats = {
+/** Statistics state. */
+interface StatsState {
+  n: number;
+  time: number;
+}
+
+let _last_stats: StatsState = {
   n: 0,
   time: performance.now(),
 };
@@ -30,12 +33,12 @@ let _last_stats = {
  * Initializes the application.
  * Sets up event listeners and starts the default simulation.
  */
-function init() {
-  const universeSelect = document.getElementById("universe-select");
-  universeSelect.addEventListener("change", (e) => change_universe(e.target));
+function init(): void {
+  const universeSelect = document.getElementById("universe-select") as HTMLSelectElement;
+  universeSelect.addEventListener("change", (e: Event) => change_universe(e.target as HTMLSelectElement));
 
   // set the default universe
-  change_universe({ value: "solar-system" });
+  change_universe({ value: "solar-system" } as HTMLSelectElement);
 
   // start the simulation
   run_simulation();
@@ -54,11 +57,11 @@ if (document.readyState === "loading") {
 /**
  * Starts the simulation loop.
  */
-function run_simulation() {
+function run_simulation(): void {
   let n = 0;
   if (simulationInterval) clearInterval(simulationInterval);
 
-  simulationInterval = setInterval(function () {
+  simulationInterval = window.setInterval(function () {
     if (!currentUniverse) return;
     n += 1;
     // do integration step(s)
@@ -68,20 +71,20 @@ function run_simulation() {
     // update visualization
     redraw();
     // manage trace
-    if (n % 5 == 0) currentUniverse.manage_trace();
+    if (n % 5 === 0) currentUniverse.manage_trace();
     // do statistics
-    if (n % 20 == 0) do_stats(n);
+    if (n % 20 === 0) do_stats(n);
   }, 20);
 }
 
 /**
  * Redraws the universe visualization on the canvas.
- * @async
  */
-async function redraw() {
+async function redraw(): Promise<void> {
   if (!currentUniverse) return;
   const scale = currentUniverse.physics.length_scale;
-  const canvas = document.getElementById("canvas");
+  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+
   // Basic resizing logic
   if (canvas.width !== canvas.offsetWidth || canvas.height !== canvas.offsetHeight) {
     canvas.width = canvas.offsetWidth;
@@ -89,6 +92,8 @@ async function redraw() {
   }
 
   const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
   // fill black
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -97,7 +102,7 @@ async function redraw() {
 
   for (const planet of currentUniverse.planets) {
     ctx.fillStyle = planet.color;
-    if (planet.shadow != null) {
+    if (planet.shadow !== null) {
       ctx.shadowColor = planet.color;
       ctx.shadowBlur = planet.shadow;
     }
@@ -110,9 +115,9 @@ async function redraw() {
     ctx.shadowBlur = 0;
     ctx.fillStyle = "#888";
     // draw label
-    if (!planet.is_dummy && planet.name != "") ctx.fillText(planet.name, x, y - 1.05 * planet.radius - 5);
+    if (!planet.is_dummy && planet.name !== "") ctx.fillText(planet.name, x, y - 1.05 * planet.radius - 5);
     // draw trace
-    if (!planet.is_dummy && planet.trace != null) {
+    if (!planet.is_dummy && planet.trace !== null) {
       ctx.strokeStyle = planet.color;
       for (let i = planet.trace.length - 1; i >= 0; i--) {
         const t = planet.trace[i];
@@ -133,11 +138,13 @@ async function redraw() {
 
 /**
  * Updates the statistics display.
- * @param {number} n - The current frame count.
+ * @param n - The current frame count.
  */
-function do_stats(n) {
+function do_stats(n: number): void {
   if (!currentUniverse) return;
   const statsbox = document.getElementById("stats-box");
+  if (!statsbox) return;
+
   const days = "Day " + (currentUniverse.physics.time / 60 / 60 / 24).toFixed(0);
   const now = performance.now();
   let fps = ((n - _last_stats.n) / (now - _last_stats.time)) * 1000;
@@ -146,7 +153,7 @@ function do_stats(n) {
   fps = fps ? fps.toFixed(0) : "??";
   fps += " fps";
 
-  // Stats logic ported from original
+  // Stats logic
   const ft = Math.round(currentUniverse.stats.force_time / 4) + "%<br>";
   statsbox.innerHTML = fps + "<br>" + days + "<br>Load: " + ft;
 
@@ -156,9 +163,9 @@ function do_stats(n) {
 
 /**
  * Changes the active universe based on the user's selection.
- * @param {HTMLSelectElement | {value: string}} select - The select element or object with a value property.
+ * @param select - The select element or object with a value property.
  */
-function change_universe(select) {
+function change_universe(select: { value: string }): void {
   const factory = universeFactories[select.value];
   if (factory) {
     currentUniverse = factory();
@@ -171,12 +178,14 @@ function change_universe(select) {
 
 /**
  * Handles mouse wheel events to zoom the canvas.
- * @param {WheelEvent} event - The mouse wheel event.
+ * @param event - The mouse wheel event.
  */
-function zoom_canvas(event) {
+function zoom_canvas(event: WheelEvent): void {
   if (!currentUniverse) return;
   const zoom_factor = 1 + event.deltaY / 2e4;
   currentUniverse.physics.length_scale *= zoom_factor;
-  if (currentUniverse.physics.bbox == null) currentUniverse.physics.bbox = 1;
+  if (currentUniverse.physics.bbox === null || currentUniverse.physics.bbox === undefined) {
+    currentUniverse.physics.bbox = 1;
+  }
   currentUniverse.physics.bbox /= zoom_factor;
 }

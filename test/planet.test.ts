@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Planet } from "../js/planet.js";
+import { Planet } from "../js/planet";
 
 describe("Planet", () => {
   it("should calculate velocity magnitude", () => {

@@ -1,10 +1,10 @@
-import { Universe } from "../universe.js";
+import { Universe } from "../universe";
 
 /**
  * Creates a galaxy collision universe.
- * @returns {Universe} The created Universe instance configured with two colliding galaxies.
+ * @returns The created Universe instance configured with two colliding galaxies.
  */
-export default function createGalaxyCollisionUniverse() {
+export default function createGalaxyCollision(): Universe {
   const universe = new Universe();
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e9;
@@ -37,7 +37,7 @@ export default function createGalaxyCollisionUniverse() {
 
   universe.generate_planets([milkyway, andromeda]);
 
-  for (let n = 0; n < universe.physics.n_asteroids; n++) {
+  for (let n = 0; n < (universe.physics.n_asteroids || 0); n++) {
     const planet = {
       name: "MW" + n,
       color: "#CCF",
@@ -51,7 +51,7 @@ export default function createGalaxyCollisionUniverse() {
     universe.generate_planets([planet]);
   }
 
-  for (let n = 0; n < universe.physics.n_asteroids; n++) {
+  for (let n = 0; n < (universe.physics.n_asteroids || 0); n++) {
     const planet = {
       name: "AG" + n,
       color: "#FFC",
@@ -65,7 +65,7 @@ export default function createGalaxyCollisionUniverse() {
     universe.generate_planets([planet]);
   }
 
-  // hightlight the earth
+  // highlight the earth
   // Note: universe.planets indices depend on insertion order.
   // milkyway and andromeda are 0 and 1.
   // The first asteroid added in the first loop is at index 2.

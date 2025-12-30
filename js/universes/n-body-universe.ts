@@ -1,10 +1,10 @@
-import { Universe } from "../universe.js";
+import { Universe } from "../universe";
 
 /**
  * Creates an N-Body problem universe.
- * @returns {Universe} The created Universe instance configured with random bodies.
+ * @returns The created Universe instance configured with random bodies.
  */
-export default function createNBodyUniverse() {
+export default function createNBodyUniverse(): Universe {
   const universe = new Universe();
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e5;
@@ -13,8 +13,8 @@ export default function createNBodyUniverse() {
   universe.physics.substeps = 1;
   universe.physics.n_asteroids = 400;
 
-  // add the asteroid belt
-  for (let n = 0; n < universe.physics.n_asteroids; n++) {
+  // add random bodies
+  for (let n = 0; n < (universe.physics.n_asteroids || 0); n++) {
     universe.generate_planets([
       {
         name: "",
