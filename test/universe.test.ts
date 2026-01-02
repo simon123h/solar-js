@@ -59,7 +59,7 @@ describe("Universe", () => {
     const star1 = new Planet("Star1", M, 10);
     star1.x = -1e10;
     star1.y = 0;
-    
+
     const star2 = new Planet("Star2", M, 10);
     star2.x = 1e10;
     star2.y = 0;
@@ -109,9 +109,7 @@ describe("Universe", () => {
 
   it("should ignore dummy planets in trace", () => {
     const universe = new Universe();
-    universe.generate_planets([
-        { name: "Dummy", mass: 100, radius: 10, is_dummy: true }
-    ]);
+    universe.generate_planets([{ name: "Dummy", mass: 100, radius: 10, is_dummy: true }]);
     const dummy = universe.planets[0];
     universe.manage_trace();
     expect(dummy.trace).toBeNull();
@@ -126,42 +124,42 @@ describe("Universe", () => {
     // P1 affected by P3 (non-dummy) and P2 (dummy)
     // P3 affected by P1 and P2
     // P2 (dummy) affected by P1 and P3?
-    // Logic: 
+    // Logic:
     // split planets into dummy and nondummy
     // loop i over nondummy
     //   loop j over rest (nondummy > i + dummy)
     // So nondummy-nondummy and nondummy-dummy are calculated.
     // dummy-dummy is NOT calculated.
-    
+
     const m = 1e30;
     const d = 1e11;
-    
+
     universe.generate_planets([
-        { name: "ND1", mass: m, x: 0, y: 0, radius: 10, is_dummy: false },
-        { name: "D1", mass: m, x: d, y: 0, radius: 10, is_dummy: true },
-        { name: "ND2", mass: m, x: -d, y: 0, radius: 10, is_dummy: false }
+      { name: "ND1", mass: m, x: 0, y: 0, radius: 10, is_dummy: false },
+      { name: "D1", mass: m, x: d, y: 0, radius: 10, is_dummy: true },
+      { name: "ND2", mass: m, x: -d, y: 0, radius: 10, is_dummy: false },
     ]);
 
     universe.update_forces();
-    
+
     const nd1 = universe.get_planet_by_name("ND1")!;
     const d1 = universe.get_planet_by_name("D1")!;
     const nd2 = universe.get_planet_by_name("ND2")!;
-    
+
     // ND1 is at 0. D1 at d. ND2 at -d.
     // Force on ND1:
     // From D1: +F (towards right)
     // From ND2: -F (towards left)
     // Net force on ND1 should be 0.
     expect(nd1.ax).toBeCloseTo(0, -5);
-    
+
     // Force on ND2 (at -d):
     // From ND1 (at 0): +F (pulls right)
     // From D1 (at d): +F_far (pulls right, distance 2d)
     // F_far = G * m * m / (2d)^2 = F / 4
     // Net ax > 0
     expect(nd2.ax).toBeGreaterThan(0);
-    
+
     // Force on D1 (at d):
     // From ND1 (at 0): -F (pulls left)
     // From ND2 (at -d): -F_far (pulls left)
@@ -170,29 +168,29 @@ describe("Universe", () => {
   });
 
   it("should handle as_dict with unnamed planets", () => {
-      const universe = new Universe();
-      universe.generate_planets([
-          { name: "Named", mass: 100, radius: 10 },
-          { name: "", mass: 100, radius: 10 }
-      ]);
-      const dict = universe.as_dict();
-      expect(dict["Named"]).toBeDefined();
-      expect(dict[""]).toBeUndefined();
-      expect(Object.keys(dict).length).toBe(1);
+    const universe = new Universe();
+    universe.generate_planets([
+      { name: "Named", mass: 100, radius: 10 },
+      { name: "", mass: 100, radius: 10 },
+    ]);
+    const dict = universe.as_dict();
+    expect(dict["Named"]).toBeDefined();
+    expect(dict[""]).toBeUndefined();
+    expect(Object.keys(dict).length).toBe(1);
   });
-  
+
   it("should handle bbox in update_forces", () => {
-     const universe = new Universe();
-     // Set bbox to something specific
-     universe.physics.bbox = 0.5;
-     universe.generate_planets([
-         { name: "P1", mass: 1e30, radius: 10, x: 0, y: 0 },
-         { name: "P2", mass: 1e30, radius: 10, x: 0.1, y: 0 } // Very close
-     ]);
-     // Force calculation uses max(dist, radius_term)
-     // This test ensures the code path using bbox is executed
-     // We just check it doesn't crash and computes something
-     universe.update_forces();
-     expect(universe.planets[0].ax).not.toBeNaN();
+    const universe = new Universe();
+    // Set bbox to something specific
+    universe.physics.bbox = 0.5;
+    universe.generate_planets([
+      { name: "P1", mass: 1e30, radius: 10, x: 0, y: 0 },
+      { name: "P2", mass: 1e30, radius: 10, x: 0.1, y: 0 }, // Very close
+    ]);
+    // Force calculation uses max(dist, radius_term)
+    // This test ensures the code path using bbox is executed
+    // We just check it doesn't crash and computes something
+    universe.update_forces();
+    expect(universe.planets[0].ax).not.toBeNaN();
   });
 });
