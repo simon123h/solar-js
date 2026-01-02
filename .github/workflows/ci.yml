@@ -35,6 +35,27 @@ jobs:
           name: dist
           path: dist
 
+  format:
+    name: Check Format
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check formatting with Prettier
+        run: npm run check-format
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
