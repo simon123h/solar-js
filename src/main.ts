@@ -150,12 +150,11 @@ function do_stats(n: number): void {
   let fps = ((n - _last_stats.n) / (now - _last_stats.time)) * 1000;
   _last_stats.time = now;
   _last_stats.n = n;
-  fps = fps ? fps.toFixed(0) : "??";
-  fps += " fps";
+  const fpsStr = (fps ? fps.toFixed(0) : "??") + " fps";
 
   // Stats logic
   const ft = Math.round(currentUniverse.stats.force_time / 4) + "%<br>";
-  statsbox.innerHTML = fps + "<br>" + days + "<br>Load: " + ft;
+  statsbox.innerHTML = fpsStr + "<br>" + days + "<br>Load: " + ft;
 
   // Reset force_time accumulator
   currentUniverse.stats.force_time = 0;
