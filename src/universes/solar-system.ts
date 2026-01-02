@@ -96,7 +96,7 @@ export default function createSolarSystem(): Universe {
   ]);
 
   // add the asteroid belt
-  for (let n = 0; n < (universe.physics.n_asteroids || 0); n++) {
+  for (let n = 0; n < universe.physics.n_asteroids!; n++) {
     universe.generate_planets([
       {
         name: "Asteroid" + n,
@@ -115,9 +115,7 @@ export default function createSolarSystem(): Universe {
     if (planet === sun) continue;
     // We can assume orbitRadius is present because we just added it in generate_planets
     const orbitRadius = (planet as any).orbitRadius;
-    if (orbitRadius) {
-      universe.circularize(planet, orbitRadius, sun);
-    }
+    universe.circularize(planet, orbitRadius, sun);
   }
 
   return universe;

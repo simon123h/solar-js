@@ -14,7 +14,7 @@ export default function createNBodyUniverse(): Universe {
   universe.physics.n_asteroids = 400;
 
   // add random bodies
-  for (let n = 0; n < (universe.physics.n_asteroids || 0); n++) {
+  for (let n = 0; n < universe.physics.n_asteroids!; n++) {
     universe.generate_planets([
       {
         name: "",

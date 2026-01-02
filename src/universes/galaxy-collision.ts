@@ -37,7 +37,7 @@ export default function createGalaxyCollision(): Universe {
 
   universe.generate_planets([milkyway, andromeda]);
 
-  for (let n = 0; n < (universe.physics.n_asteroids || 0); n++) {
+  for (let n = 0; n < universe.physics.n_asteroids!; n++) {
     const planet = {
       name: "MW" + n,
       color: "#CCF",
@@ -51,7 +51,7 @@ export default function createGalaxyCollision(): Universe {
     universe.generate_planets([planet]);
   }
 
-  for (let n = 0; n < (universe.physics.n_asteroids || 0); n++) {
+  for (let n = 0; n < universe.physics.n_asteroids!; n++) {
     const planet = {
       name: "AG" + n,
       color: "#FFC",
