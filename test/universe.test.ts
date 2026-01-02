@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { Universe } from "../js/universe";
-import { Planet } from "../js/planet";
+import { Universe } from "../src/universe";
+import { Planet } from "../src/planet";
 
 describe("Universe", () => {
   it("should initialize correctly", () => {

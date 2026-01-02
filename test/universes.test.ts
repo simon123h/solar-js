@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import createSolarSystem from "../js/universes/solar-system";
-import createGalaxyCollision from "../js/universes/galaxy-collision";
-import createNBodyUniverse from "../js/universes/n-body-universe";
+import createSolarSystem from "../src/universes/solar-system";
+import createGalaxyCollision from "../src/universes/galaxy-collision";
+import createNBodyUniverse from "../src/universes/n-body-universe";
 
 describe("Universe Factories", () => {
   it("should create Solar System", () => {

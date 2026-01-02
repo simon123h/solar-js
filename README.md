@@ -1,10 +1,10 @@
 # Solar-JS: N-body solar system simulation written in JavaScript
 
-![Solar System Simulation](img/solar-system.gif)
+![Solar System Simulation](docs/img/solar-system.gif)
 
-![Galaxy Collision Simulation](img/galaxy-collision.gif)
+![Galaxy Collision Simulation](docs/img/galaxy-collision.gif)
 
-![N-Body Problem Simulation](img/n-body-universe.gif)
+![N-Body Problem Simulation](docs/img/n-body-universe.gif)
 
 ## First steps
 
