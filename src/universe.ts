@@ -38,6 +38,17 @@ export class Universe {
   physics: PhysicsConfig;
   stats: Stats;
 
+  // Physics Buffers (SoA - Structure of Arrays)
+  px: Float64Array = new Float64Array(0);
+  py: Float64Array = new Float64Array(0);
+  pvx: Float64Array = new Float64Array(0);
+  pvy: Float64Array = new Float64Array(0);
+  pax: Float64Array = new Float64Array(0);
+  pay: Float64Array = new Float64Array(0);
+  pmass: Float64Array = new Float64Array(0);
+  pradius: Float64Array = new Float64Array(0);
+  count_nondummy: number = 0;
+
   /**
    * Creates a new Universe instance.
    */
@@ -69,7 +80,45 @@ export class Universe {
       }
       this.planets.push(planet);
     }
+    // Note: We defer sorting and buffer initialization to the prepare() method
+  }
+
+  /**
+   * Prepares the physics engine.
+   * Sorts planets, allocates TypedArrays, and copies data from objects to arrays.
+   * Must be called before the simulation starts or after adding planets.
+   */
+  prepare(): void {
     this.sort_planets();
+
+    const n = this.planets.length;
+    if (this.px.length !== n) {
+        this.px = new Float64Array(n);
+        this.py = new Float64Array(n);
+        this.pvx = new Float64Array(n);
+        this.pvy = new Float64Array(n);
+        this.pax = new Float64Array(n);
+        this.pay = new Float64Array(n);
+        this.pmass = new Float64Array(n);
+        this.pradius = new Float64Array(n);
+    }
+
+    this.count_nondummy = 0;
+    for (let i = 0; i < n; i++) {
+        const p = this.planets[i];
+        this.px[i] = p.x;
+        this.py[i] = p.y;
+        this.pvx[i] = p.vx;
+        this.pvy[i] = p.vy;
+        this.pax[i] = p.ax;
+        this.pay[i] = p.ay;
+        this.pmass[i] = p.mass;
+        this.pradius[i] = p.radius;
+
+        if (!p.is_dummy) {
+            this.count_nondummy++;
+        }
+    }
   }
 
   /**
@@ -156,43 +205,61 @@ export class Universe {
     const start = performance.now();
     const G = this.physics.G;
     const radius_bbox = this.physics.bbox === null || this.physics.bbox === undefined ? 1 : this.physics.bbox;
-
-    // reset forces
-    for (const planet of this.planets) {
-      planet.ax = planet.ay = 0;
-    }
-
+    const scale = this.physics.length_scale;
     const n_planets = this.planets.length;
-    // Since planets are sorted (non-dummy first), we can just find the split point
-    // or iterate until we hit a dummy.
-    // However, finding the split point every time is fast enough or we just check is_dummy in the outer loop.
     
-    for (let i = 0; i < n_planets; i++) {
-      const p1 = this.planets[i];
-      // Optimization: dummys don't attract dummys, so we can stop the outer loop
-      // once we reach the first dummy (because planets are sorted).
-      if (p1.is_dummy) break;
+    // reset forces (accelerations)
+    this.pax.fill(0);
+    this.pay.fill(0);
+
+    // Cache buffer references for speed
+    const px = this.px;
+    const py = this.py;
+    const pmass = this.pmass;
+    const pradius = this.pradius;
+    const pax = this.pax;
+    const pay = this.pay;
+    const ndl = this.count_nondummy;
+
+    for (let i = 0; i < ndl; i++) {
+      // Dummies don't attract dummies, and planets are sorted.
+      // So i only iterates non-dummies.
+      
+      const p1x = px[i];
+      const p1y = py[i];
+      const p1mass = pmass[i];
+      const p1radius = pradius[i];
 
       for (let j = i + 1; j < n_planets; j++) {
-        const p2 = this.planets[j];
-
-        // compute distance between planets
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
-        let distance = Math.sqrt(dx * dx + dy * dy);
+        const dx = px[j] - p1x;
+        const dy = py[j] - p1y;
+        let distSq = dx * dx + dy * dy;
+        let distance = Math.sqrt(distSq);
 
         // make sure distance is not too close
-        distance = Math.max(distance, radius_bbox * (p1.radius + p2.radius) * this.physics.length_scale);
+        // Optimization: Precompute min distance to avoid expensive property lookups if possible
+        const minDist = radius_bbox * (p1radius + pradius[j]) * scale;
+        
+        if (distance < minDist) {
+            distance = minDist;
+            distSq = distance * distance; // Update squared distance too if clamped
+        }
 
-        // gravitational acceleration for both planets
-        const f = G / distance / distance / distance;
-        const fdx = f * dx;
-        const fdy = f * dy;
+        // gravitational acceleration
+        // f = G * m1 * m2 / r^2
+        // a1 = f / m1 = G * m2 / r^2
+        // Direction vector: (dx/r, dy/r)
+        // a1_x = (G * m2 / r^2) * (dx / r) = G * m2 * dx / r^3
+        
+        // We can share G / r^3
+        const f_factor = G / (distSq * distance);
+        const fdx = f_factor * dx;
+        const fdy = f_factor * dy;
 
-        p1.ax += fdx * p2.mass;
-        p1.ay += fdy * p2.mass;
-        p2.ax -= fdx * p1.mass;
-        p2.ay -= fdy * p1.mass;
+        pax[i] += fdx * pmass[j];
+        pay[i] += fdy * pmass[j];
+        pax[j] -= fdx * p1mass;
+        pay[j] -= fdy * p1mass;
       }
     }
     this.stats.force_time += performance.now() - start;
@@ -208,26 +275,52 @@ export class Universe {
     // update forces (acceleration)
     this.update_forces();
 
-    for (const p of this.planets) {
+    const n = this.planets.length;
+    const px = this.px;
+    const py = this.py;
+    const pvx = this.pvx;
+    const pvy = this.pvy;
+    const pax = this.pax;
+    const pay = this.pay;
+
+    for (let i = 0; i < n; i++) {
       // auxiliary values
-      const dt2pax = dt2 * p.ax;
-      const dt2pay = dt2 * p.ay;
+      const dt2pax = dt2 * pax[i];
+      const dt2pay = dt2 * pay[i];
 
       // second bit of velocity step (here done first for performance)
-      p.vx += dt2pax;
-      p.vy += dt2pay;
+      pvx[i] += dt2pax;
+      pvy[i] += dt2pay;
 
       // do spatial step
-      p.x += dt * (p.vx + dt2pax);
-      p.y += dt * (p.vy + dt2pay);
+      px[i] += dt * (pvx[i] + dt2pax);
+      py[i] += dt * (pvy[i] + dt2pay);
 
       // first bit of velocity step (done second for performance)
-      p.vx += dt2pax;
-      p.vy += dt2pay;
-      // NOTE: this weird order results in the velocities always being wrong!
+      pvx[i] += dt2pax;
+      pvy[i] += dt2pay;
     }
+    
+    this.sync_to_objects();
 
     this.physics.time += dt;
+  }
+
+  /**
+   * Syncs the physics state from TypedArrays back to the Planet objects.
+   * Useful for rendering, tracing, and debugging.
+   */
+  sync_to_objects(): void {
+    const n = this.planets.length;
+    for (let i = 0; i < n; i++) {
+        const p = this.planets[i];
+        p.x = this.px[i];
+        p.y = this.py[i];
+        p.vx = this.pvx[i];
+        p.vy = this.pvy[i];
+        p.ax = this.pax[i];
+        p.ay = this.pay[i];
+    }
   }
 
   /**

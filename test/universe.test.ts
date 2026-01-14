@@ -140,7 +140,9 @@ describe("Universe", () => {
       { name: "ND2", mass: m, x: -d, y: 0, radius: 10, is_dummy: false },
     ]);
 
+    universe.prepare();
     universe.update_forces();
+    universe.sync_to_objects();
 
     const nd1 = universe.get_planet_by_name("ND1")!;
     const d1 = universe.get_planet_by_name("D1")!;
@@ -187,6 +189,7 @@ describe("Universe", () => {
       { name: "P1", mass: 1e30, radius: 10, x: 0, y: 0 },
       { name: "P2", mass: 1e30, radius: 10, x: 0.1, y: 0 }, // Very close
     ]);
+    universe.prepare();
     // Force calculation uses max(dist, radius_term)
     // This test ensures the code path using bbox is executed
     // We just check it doesn't crash and computes something

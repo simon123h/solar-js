@@ -175,6 +175,7 @@ function change_universe(select: { value: string }): void {
   const factory = universeFactories[select.value];
   if (factory) {
     currentUniverse = factory();
+    currentUniverse.prepare();
     // Reset stats to avoid huge spikes or weirdness
     _last_stats.time = performance.now();
     _last_stats.n = 0;
