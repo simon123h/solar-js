@@ -69,6 +69,18 @@ export class Universe {
       }
       this.planets.push(planet);
     }
+    this.sort_planets();
+  }
+
+  /**
+   * Sorts the planets so that non-dummy planets come first.
+   * This optimizes the force calculation loop.
+   */
+  sort_planets(): void {
+    this.planets.sort((a, b) => {
+      if (a.is_dummy === b.is_dummy) return 0;
+      return a.is_dummy ? 1 : -1;
+    });
   }
 
   /**
@@ -150,17 +162,19 @@ export class Universe {
       planet.ax = planet.ay = 0;
     }
 
-    // split planets into dummy-planets and nondummy-planets
-    const dummy = this.planets.filter((p) => p.is_dummy);
-    const nondummy = this.planets.filter((p) => !p.is_dummy);
-    const ndl = nondummy.length;
-    const dl = dummy.length;
+    const n_planets = this.planets.length;
+    // Since planets are sorted (non-dummy first), we can just find the split point
+    // or iterate until we hit a dummy.
+    // However, finding the split point every time is fast enough or we just check is_dummy in the outer loop.
+    
+    for (let i = 0; i < n_planets; i++) {
+      const p1 = this.planets[i];
+      // Optimization: dummys don't attract dummys, so we can stop the outer loop
+      // once we reach the first dummy (because planets are sorted).
+      if (p1.is_dummy) break;
 
-    // loop over planet-planet interactions, but exclude dummy-dummy interactions
-    for (let i = 0; i < ndl; i++) {
-      const p1 = nondummy[i];
-      for (let j = i + 1; j < ndl + dl; j++) {
-        const p2 = j < ndl ? nondummy[j] : dummy[j - ndl];
+      for (let j = i + 1; j < n_planets; j++) {
+        const p2 = this.planets[j];
 
         // compute distance between planets
         const dx = p2.x - p1.x;
@@ -172,10 +186,13 @@ export class Universe {
 
         // gravitational acceleration for both planets
         const f = G / distance / distance / distance;
-        p1.ax += f * dx * p2.mass;
-        p1.ay += f * dy * p2.mass;
-        p2.ax -= f * dx * p1.mass;
-        p2.ay -= f * dy * p1.mass;
+        const fdx = f * dx;
+        const fdy = f * dy;
+
+        p1.ax += fdx * p2.mass;
+        p1.ay += fdy * p2.mass;
+        p2.ax -= fdx * p1.mass;
+        p2.ay -= fdy * p1.mass;
       }
     }
     this.stats.force_time += performance.now() - start;
