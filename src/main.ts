@@ -16,7 +16,7 @@ const universeFactories: Record<string, UniverseFactory> = {
 let currentUniverse: Universe | null = null;
 
 /** Interval ID for the simulation loop. */
-let simulationInterval: number | null = null;
+let animationFrameId: number | null = null;
 
 /** Statistics state. */
 interface StatsState {
@@ -59,9 +59,12 @@ if (document.readyState === "loading") {
  */
 function run_simulation(): void {
   let n = 0;
-  if (simulationInterval) clearInterval(simulationInterval);
+  if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+  }
 
-  simulationInterval = window.setInterval(function () {
+  const loop = () => {
     if (!currentUniverse) return;
     n += 1;
     // do integration step(s)
@@ -74,7 +77,11 @@ function run_simulation(): void {
     if (n % 5 === 0) currentUniverse.manage_trace();
     // do statistics
     if (n % 20 === 0) do_stats(n);
-  }, 20);
+    
+    animationFrameId = requestAnimationFrame(loop);
+  };
+  
+  animationFrameId = requestAnimationFrame(loop);
 }
 
 /**
