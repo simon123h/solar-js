@@ -317,7 +317,7 @@ export class Universe {
     // Let's assume standard N-Body optimization (BH) implies full interaction is acceptable/better.
     // I will loop over ALL planets.
     
-    const minD = radius_bbox * scale * 0.1; // simplified safety distance, will improve in tree
+    const minD = radius_bbox * scale * 10; // simplified safety distance, will improve in tree
 
     for (let i = 0; i < n_planets; i++) {
         this.quadTree.calculateForce(i, px[i], py[i], pax, pay, G, theta, minD, pradius);
