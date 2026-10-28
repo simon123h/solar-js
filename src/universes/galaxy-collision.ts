@@ -10,7 +10,9 @@ export default function createGalaxyCollision(random: () => number = Math.random
   universe.random = random;
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e9;
-  universe.physics.softening = 1e9;
+  // Softening acts as the core size of each galaxy. It must stay large enough for the time step to
+  // resolve a pass through the core; smaller values make close encounters numerically violent.
+  universe.physics.softening = 6e9;
   universe.physics.dt = 60 * 60 * 3;
   universe.physics.trace_age = 60 * 60 * 24 * 400;
   universe.physics.substeps = 3;

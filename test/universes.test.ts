@@ -23,6 +23,14 @@ describe("Universe Factories", () => {
     expect(universe.planets.filter((p) => !p.is_dummy).map((p) => p.name)).toEqual(["Milky Way", "Andromeda Galaxy", "Earth"]);
   });
 
+  it("should resolve passes through the galaxy cores with its time step", () => {
+    const universe = createGalaxyCollision();
+    const heaviest = Math.max(...universe.planets.map((p) => p.mass));
+    const core_crossing_time = Math.sqrt(universe.physics.softening ** 3 / (universe.physics.G * heaviest));
+    // a time step much longer than this injects spurious energy and flings bodies out of the galaxies
+    expect(core_crossing_time).toBeGreaterThan(universe.physics.dt * 2);
+  });
+
   it("should create N-Body Universe", () => {
     const universe = createNBodyUniverse();
     expect(universe.planets.length).toBeGreaterThan(0);
