@@ -90,6 +90,34 @@ describe("Universe", () => {
     expect(planet.v).toBeCloseTo(expectedV, -5);
   });
 
+  it("should use the injected random source in circularize", () => {
+    const universe = new Universe();
+    universe.random = () => 0;
+    universe.generate_planets([
+      { name: "Sun", mass: 1e30, radius: 10 },
+      { name: "Earth", mass: 1e24, radius: 5 },
+    ]);
+    universe.circularize(universe.planets[1], 1e11, universe.planets[0]);
+    // angle 0: placed on the +x axis, moving along -y (counter-clockwise on a canvas with y pointing down)
+    expect(universe.planets[1].x).toBeCloseTo(1e11);
+    expect(universe.planets[1].y).toBeCloseTo(0);
+    expect(universe.planets[1].vy).toBeLessThan(0);
+  });
+
+  it("should refuse to circularize around nothing or at zero distance", () => {
+    const universe = new Universe();
+    universe.generate_planets([
+      { name: "A", mass: 0, radius: 1 },
+      { name: "B", mass: 0, radius: 1 },
+      { name: "C", mass: 1e24, radius: 1 },
+    ]);
+    const [a, b, c] = universe.planets;
+    expect(() => universe.circularize(c, 1e11, a)).toThrow("positive mass");
+    expect(() => universe.circularize(c, 1e11, [a, b])).toThrow("positive mass");
+    expect(() => universe.circularize(c, 0, c)).toThrow("orbit_radius");
+    expect(() => universe.circularize(c, NaN, c)).toThrow("orbit_radius");
+  });
+
   it("should run integration steps and update time", () => {
     const universe = new Universe();
     universe.generate_planets([

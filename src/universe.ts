@@ -45,6 +45,8 @@ export class Universe {
   planets: Planet[];
   physics: PhysicsConfig;
   stats: Stats;
+  /** Source of randomness for scene setup; replace it with a seeded generator for reproducible scenes. */
+  random: () => number = Math.random;
   private force_buffers: ForceBuffers | null = null;
 
   /**
@@ -117,8 +119,11 @@ export class Universe {
    * @param orbit_radius - The radius of the orbit.
    * @param attractor - The planet(s) to orbit around. If an array, orbits the center of mass.
    * @param sign - The direction of orbit (1 for counter-clockwise, -1 for clockwise).
+   * @throws If the orbit radius is not positive or the attractor has no mass.
    */
   circularize(planet: Planet, orbit_radius: number, attractor: Planet | Planet[], sign: number = 1): void {
+    if (!(orbit_radius > 0)) throw new Error("circularize: orbit_radius must be positive");
+
     // if attractor is a list of planets, compute their gravitational center
     let centerOfMass: { x: number; y: number; mass: number } = {
       x: 0,
@@ -132,14 +137,17 @@ export class Universe {
         centerOfMass.x += a.mass * a.x;
         centerOfMass.y += a.mass * a.y;
       }
-      centerOfMass.x /= centerOfMass.mass;
-      centerOfMass.y /= centerOfMass.mass;
+      if (centerOfMass.mass > 0) {
+        centerOfMass.x /= centerOfMass.mass;
+        centerOfMass.y /= centerOfMass.mass;
+      }
     } else {
       centerOfMass = attractor;
     }
+    if (!(centerOfMass.mass > 0)) throw new Error("circularize: attractor must have positive mass");
 
     // put planet somewhere on the orbit
-    let angle = Math.random() * 2 * Math.PI;
+    let angle = this.random() * 2 * Math.PI;
     planet.x = centerOfMass.x + orbit_radius * Math.cos(angle);
     planet.y = centerOfMass.y + orbit_radius * Math.sin(angle);
 

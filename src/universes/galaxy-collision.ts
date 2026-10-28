@@ -2,10 +2,12 @@ import { Universe } from "../universe";
 
 /**
  * Creates a galaxy collision universe.
+ * @param random - Source of randomness, e.g. a seeded generator for a reproducible scene.
  * @returns The created Universe instance configured with two colliding galaxies.
  */
-export default function createGalaxyCollision(): Universe {
+export default function createGalaxyCollision(random: () => number = Math.random): Universe {
   const universe = new Universe();
+  universe.random = random;
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e9;
   universe.physics.dt = 60 * 60 * 3;
@@ -48,7 +50,7 @@ export default function createGalaxyCollision(): Universe {
       shadow: 6,
       is_dummy: !is_earth,
     };
-    const radius = 1e11 * (0.2 + Math.random());
+    const radius = 1e11 * (0.2 + universe.random());
     universe.circularize(universe.generate_planets([planet])[0], radius, mw, 0.9);
   }
 
@@ -61,7 +63,7 @@ export default function createGalaxyCollision(): Universe {
       shadow: 6,
       is_dummy: true,
     };
-    const radius = 1e11 * (0.2 + Math.random());
+    const radius = 1e11 * (0.2 + universe.random());
     universe.circularize(universe.generate_planets([planet])[0], radius, ag, 0.9);
   }
 

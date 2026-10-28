@@ -2,10 +2,12 @@ import { Universe } from "../universe";
 
 /**
  * Creates an N-Body problem universe.
+ * @param random - Source of randomness, e.g. a seeded generator for a reproducible scene.
  * @returns The created Universe instance configured with random bodies.
  */
-export default function createNBodyUniverse(): Universe {
+export default function createNBodyUniverse(random: () => number = Math.random): Universe {
   const universe = new Universe();
+  universe.random = random;
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e5;
   universe.physics.dt = 60 * 60 * 24;
@@ -18,11 +20,11 @@ export default function createNBodyUniverse(): Universe {
     universe.generate_planets([
       {
         name: "",
-        color: `hsl(${Math.random() * 360} 60% 70%)`,
+        color: `hsl(${universe.random() * 360} 60% 70%)`,
         mass: 1e15,
         radius: 3,
-        x: 800 * universe.physics.length_scale * (0.5 - Math.random()),
-        y: 800 * universe.physics.length_scale * (0.5 - Math.random()),
+        x: 800 * universe.physics.length_scale * (0.5 - universe.random()),
+        y: 800 * universe.physics.length_scale * (0.5 - universe.random()),
       },
     ]);
   }

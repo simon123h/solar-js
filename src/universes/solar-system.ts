@@ -7,10 +7,12 @@ interface OrbitingSpec extends PlanetSpec {
 
 /**
  * Creates a solar system universe.
+ * @param random - Source of randomness, e.g. a seeded generator for a reproducible scene.
  * @returns The created Universe instance configured with solar system planets.
  */
-export default function createSolarSystem(): Universe {
+export default function createSolarSystem(random: () => number = Math.random): Universe {
   const universe = new Universe();
+  universe.random = random;
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e9;
   universe.physics.dt = 60 * 60 * 6;
@@ -107,7 +109,7 @@ export default function createSolarSystem(): Universe {
       color: "#AAA",
       mass: 1e15,
       radius: 1,
-      orbitRadius: 4e11 * (1 + 0.05 * Math.random()),
+      orbitRadius: 4e11 * (1 + 0.05 * universe.random()),
       is_dummy: true,
     });
   }
