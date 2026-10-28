@@ -243,6 +243,29 @@ export class Universe {
   }
 
   /**
+   * Computes the total mechanical energy of the system, consistent with the forces in update_forces:
+   * Plummer-softened potential energy, with dummy-dummy pairs excluded.
+   * @returns The kinetic plus potential energy.
+   */
+  total_energy(): number {
+    const G = this.physics.G;
+    const eps2 = this.physics.softening * this.physics.softening;
+    let energy = 0;
+    for (let i = 0; i < this.planets.length; i++) {
+      const p1 = this.planets[i];
+      energy += p1.E_kin();
+      for (let j = i + 1; j < this.planets.length; j++) {
+        const p2 = this.planets[j];
+        if (p1.is_dummy && p2.is_dummy) continue;
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        energy -= (G * p1.mass * p2.mass) / Math.sqrt(dx * dx + dy * dy + eps2);
+      }
+    }
+    return energy;
+  }
+
+  /**
    * Performs a single integration step using the position Verlet (drift-kick-drift) method.
    * This is second-order accurate and symplectic, so energy stays bounded over long runs.
    */

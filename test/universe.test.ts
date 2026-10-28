@@ -219,7 +219,6 @@ describe("Universe", () => {
   });
 
   describe("integration accuracy", () => {
-    const G = 6.674e-11;
     const orbit_radius = 1.496e11;
     const sun_mass = 1.988e30;
 
@@ -234,19 +233,14 @@ describe("Universe", () => {
       return { universe, sun, earth };
     }
 
-    function total_energy(sun: Planet, earth: Planet): number {
-      const r = Math.hypot(earth.x - sun.x, earth.y - sun.y);
-      return sun.E_kin() + earth.E_kin() - (G * sun.mass * earth.mass) / r;
-    }
-
     it("should conserve energy on a circular orbit", () => {
       const { universe, sun, earth } = createTwoBodyUniverse();
-      const initial_energy = total_energy(sun, earth);
+      const initial_energy = universe.total_energy();
 
       // ten years at 6h steps
       for (let i = 0; i < 14600; i++) {
         universe.integration_step();
-        const drift = Math.abs((total_energy(sun, earth) - initial_energy) / initial_energy);
+        const drift = Math.abs((universe.total_energy() - initial_energy) / initial_energy);
         expect(drift).toBeLessThan(1e-9);
       }
     });
@@ -259,6 +253,29 @@ describe("Universe", () => {
         const r = Math.hypot(earth.x - sun.x, earth.y - sun.y);
         expect(Math.abs(r / orbit_radius - 1)).toBeLessThan(1e-5);
       }
+    });
+  });
+
+  describe("total_energy", () => {
+    it("should add kinetic and softened potential energy", () => {
+      const universe = new Universe();
+      universe.physics.softening = 0;
+      universe.generate_planets([
+        { name: "A", mass: 2e24, radius: 1, vx: 10 },
+        { name: "B", mass: 1e24, radius: 1, x: 1e9, vy: -20 },
+      ]);
+      const G = universe.physics.G;
+      const expected = 0.5 * 2e24 * 100 + 0.5 * 1e24 * 400 - (G * 2e24 * 1e24) / 1e9;
+      expect(universe.total_energy() / expected).toBeCloseTo(1, 12);
+    });
+
+    it("should not count the potential between two dummies", () => {
+      const universe = new Universe();
+      universe.generate_planets([
+        { name: "A", mass: 1e24, radius: 1, is_dummy: true },
+        { name: "B", mass: 1e24, radius: 1, x: 1e9, is_dummy: true },
+      ]);
+      expect(universe.total_energy()).toBe(0);
     });
   });
 
