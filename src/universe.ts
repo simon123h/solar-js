@@ -119,6 +119,7 @@ export class Universe {
    * @param planet - The planet to orbit.
    * @param orbit_radius - The radius of the orbit.
    * @param attractor - The planet(s) to orbit around. If an array, orbits the center of mass.
+   *   The orbiting planet also moves with the attractor's (center of mass) velocity.
    * @param sign - The direction of orbit (1 for counter-clockwise, -1 for clockwise).
    * @throws If the orbit radius is not positive or the attractor has no mass.
    */
@@ -126,9 +127,11 @@ export class Universe {
     if (!(orbit_radius > 0)) throw new Error("circularize: orbit_radius must be positive");
 
     // if attractor is a list of planets, compute their gravitational center
-    let centerOfMass: { x: number; y: number; mass: number } = {
+    let centerOfMass: { x: number; y: number; vx: number; vy: number; mass: number } = {
       x: 0,
       y: 0,
+      vx: 0,
+      vy: 0,
       mass: 0,
     };
 
@@ -137,10 +140,14 @@ export class Universe {
         centerOfMass.mass += a.mass;
         centerOfMass.x += a.mass * a.x;
         centerOfMass.y += a.mass * a.y;
+        centerOfMass.vx += a.mass * a.vx;
+        centerOfMass.vy += a.mass * a.vy;
       }
       if (centerOfMass.mass > 0) {
         centerOfMass.x /= centerOfMass.mass;
         centerOfMass.y /= centerOfMass.mass;
+        centerOfMass.vx /= centerOfMass.mass;
+        centerOfMass.vy /= centerOfMass.mass;
       }
     } else {
       centerOfMass = attractor;
@@ -160,8 +167,8 @@ export class Universe {
 
     // construct angle from rotating force vector by 90deg
     angle -= (Math.PI / 2) * sign;
-    planet.vx = velocity * Math.cos(angle);
-    planet.vy = velocity * Math.sin(angle);
+    planet.vx = centerOfMass.vx + velocity * Math.cos(angle);
+    planet.vy = centerOfMass.vy + velocity * Math.sin(angle);
   }
 
   /**

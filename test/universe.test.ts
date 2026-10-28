@@ -90,6 +90,36 @@ describe("Universe", () => {
     expect(planet.v).toBeCloseTo(expectedV, -5);
   });
 
+  it("should carry the velocity of a moving attractor", () => {
+    const universe = new Universe();
+    universe.generate_planets([
+      { name: "Star", mass: 1e30, radius: 10, x: 5e11, y: -3e11, vx: 4e3, vy: -2e3 },
+      { name: "Planet", mass: 1e24, radius: 5 },
+    ]);
+    const [star, planet] = universe.planets;
+    universe.circularize(planet, 1e11, star);
+
+    // relative to the star the planet moves at the circular orbit speed
+    const relative_speed = Math.hypot(planet.vx - star.vx, planet.vy - star.vy);
+    expect(relative_speed).toBeCloseTo(Math.sqrt((universe.physics.G * star.mass) / 1e11), 0);
+    expect(Math.hypot(planet.x - star.x, planet.y - star.y)).toBeCloseTo(1e11, -3);
+  });
+
+  it("should carry the center of mass velocity of several attractors", () => {
+    const universe = new Universe();
+    universe.generate_planets([
+      { name: "A", mass: 3e30, radius: 10, x: -1e10, vx: 1e3, vy: 0 },
+      { name: "B", mass: 1e30, radius: 10, x: 3e10, vx: -5e3, vy: 8e3 },
+      { name: "Planet", mass: 1e24, radius: 5 },
+    ]);
+    const [a, b, planet] = universe.planets;
+    universe.circularize(planet, 1e12, [a, b]);
+
+    // center of mass velocity is (3e3 - 5e3, 8e3) / 4 = (-500, 2000)
+    const speed = Math.sqrt((universe.physics.G * 4e30) / 1e12);
+    expect(Math.hypot(planet.vx + 500, planet.vy - 2000)).toBeCloseTo(speed, 0);
+  });
+
   it("should use the injected random source in circularize", () => {
     const universe = new Universe();
     universe.random = () => 0;
