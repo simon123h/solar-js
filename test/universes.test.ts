@@ -16,6 +16,10 @@ describe("Universe Factories", () => {
     expect(universe.planets.length).toBeGreaterThan(2);
     expect(universe.get_planet_by_name("Milky Way")).toBeDefined();
     expect(universe.get_planet_by_name("Andromeda Galaxy")).toBeDefined();
+
+    const earth = universe.get_planet_by_name("Earth");
+    expect(earth?.is_dummy).toBe(false);
+    expect(universe.planets.filter((p) => !p.is_dummy).map((p) => p.name)).toEqual(["Milky Way", "Andromeda Galaxy", "Earth"]);
   });
 
   it("should create N-Body Universe", () => {

@@ -35,20 +35,21 @@ export default function createGalaxyCollision(): Universe {
     vy: -4e3,
   };
 
-  universe.generate_planets([milkyway, andromeda]);
+  const [mw, ag] = universe.generate_planets([milkyway, andromeda]);
 
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
+    // highlight the earth: the first body of the Milky Way is a full, non-dummy planet
+    const is_earth = n === 0;
     const planet = {
-      name: "MW" + n,
-      color: "#CCF",
+      name: is_earth ? "Earth" : "MW" + n,
+      color: is_earth ? "#0077ff" : "#CCF",
       mass: 1e15,
-      radius: 1,
+      radius: is_earth ? 2 : 1,
       shadow: 6,
-      is_dummy: true,
+      is_dummy: !is_earth,
     };
     const radius = 1e11 * (0.2 + Math.random());
-    universe.circularize(planet, radius, milkyway, 0.9);
-    universe.generate_planets([planet]);
+    universe.circularize(universe.generate_planets([planet])[0], radius, mw, 0.9);
   }
 
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
@@ -61,18 +62,8 @@ export default function createGalaxyCollision(): Universe {
       is_dummy: true,
     };
     const radius = 1e11 * (0.2 + Math.random());
-    universe.circularize(planet, radius, andromeda, 0.9);
-    universe.generate_planets([planet]);
+    universe.circularize(universe.generate_planets([planet])[0], radius, ag, 0.9);
   }
-
-  // highlight the earth
-  // Note: universe.planets indices depend on insertion order.
-  // milkyway and andromeda are 0 and 1.
-  // The first asteroid added in the first loop is at index 2.
-  universe.planets[2].name = "Earth";
-  universe.planets[2].color = "#0077ff";
-  universe.planets[2].is_dummy = false;
-  universe.planets[2].radius = 2;
 
   return universe;
 }
