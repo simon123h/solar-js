@@ -234,7 +234,7 @@ describe("Universe", () => {
     }
 
     it("should conserve energy on a circular orbit", () => {
-      const { universe, sun, earth } = createTwoBodyUniverse();
+      const { universe } = createTwoBodyUniverse();
       const initial_energy = universe.total_energy();
 
       // ten years at 6h steps
