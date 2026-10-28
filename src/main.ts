@@ -123,15 +123,19 @@ function redraw(): void {
   if (!currentUniverse) return;
   const scale = currentUniverse.physics.length_scale;
 
-  // Basic resizing logic
-  if (canvas.width !== canvas.offsetWidth || canvas.height !== canvas.offsetHeight) {
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+  // Match the backing store to the display's pixel density, but keep drawing in CSS pixels
+  const dpr = window.devicePixelRatio || 1;
+  const width = canvas.offsetWidth;
+  const height = canvas.offsetHeight;
+  if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
   }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // fill black
   ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, width, height);
   ctx.font = "12px sans-serif";
   ctx.textAlign = "center";
 
@@ -141,8 +145,8 @@ function redraw(): void {
       ctx.shadowColor = planet.color;
       ctx.shadowBlur = planet.shadow;
     }
-    let x = canvas.width / 2 + planet.x / scale;
-    let y = canvas.height / 2 + planet.y / scale;
+    let x = width / 2 + planet.x / scale;
+    let y = height / 2 + planet.y / scale;
     ctx.beginPath();
     ctx.arc(x, y, planet.radius, 0, 2 * Math.PI);
     ctx.closePath();
@@ -157,8 +161,8 @@ function redraw(): void {
       for (let i = planet.trace.length - 1; i >= 0; i--) {
         const t = planet.trace[i];
         ctx.globalAlpha = (1 - (currentUniverse.physics.time - t[0]) / currentUniverse.physics.trace_age) / 2;
-        const tx = canvas.width / 2 + t[1] / scale;
-        const ty = canvas.height / 2 + t[2] / scale;
+        const tx = width / 2 + t[1] / scale;
+        const ty = height / 2 + t[2] / scale;
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(tx, ty);
