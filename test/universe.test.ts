@@ -179,6 +179,50 @@ describe("Universe", () => {
     expect(Object.keys(dict).length).toBe(1);
   });
 
+  describe("integration accuracy", () => {
+    const G = 6.674e-11;
+    const orbit_radius = 1.496e11;
+    const sun_mass = 1.988e30;
+
+    function createTwoBodyUniverse(): { universe: Universe; sun: Planet; earth: Planet } {
+      const universe = new Universe();
+      universe.generate_planets([
+        { name: "Sun", mass: sun_mass, radius: 1, x: 0, y: 0 },
+        { name: "Earth", mass: 5.972e24, radius: 1 },
+      ]);
+      const [sun, earth] = universe.planets;
+      universe.circularize(earth, orbit_radius, sun);
+      return { universe, sun, earth };
+    }
+
+    function total_energy(sun: Planet, earth: Planet): number {
+      const r = Math.hypot(earth.x - sun.x, earth.y - sun.y);
+      return sun.E_kin() + earth.E_kin() - (G * sun.mass * earth.mass) / r;
+    }
+
+    it("should conserve energy on a circular orbit", () => {
+      const { universe, sun, earth } = createTwoBodyUniverse();
+      const initial_energy = total_energy(sun, earth);
+
+      // ten years at 6h steps
+      for (let i = 0; i < 14600; i++) {
+        universe.integration_step();
+        const drift = Math.abs((total_energy(sun, earth) - initial_energy) / initial_energy);
+        expect(drift).toBeLessThan(1e-9);
+      }
+    });
+
+    it("should keep a circular orbit circular", () => {
+      const { universe, sun, earth } = createTwoBodyUniverse();
+
+      for (let i = 0; i < 14600; i++) {
+        universe.integration_step();
+        const r = Math.hypot(earth.x - sun.x, earth.y - sun.y);
+        expect(Math.abs(r / orbit_radius - 1)).toBeLessThan(1e-5);
+      }
+    });
+  });
+
   it("should handle bbox in update_forces", () => {
     const universe = new Universe();
     // Set bbox to something specific
