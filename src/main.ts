@@ -147,14 +147,15 @@ function do_stats(n: number): void {
 
   const days = "Day " + (currentUniverse.physics.time / 60 / 60 / 24).toFixed(0);
   const now = performance.now();
-  let fps = ((n - _last_stats.n) / (now - _last_stats.time)) * 1000;
+  const elapsed = now - _last_stats.time;
+  const fps = ((n - _last_stats.n) / elapsed) * 1000;
   _last_stats.time = now;
   _last_stats.n = n;
   const fpsStr = (fps ? fps.toFixed(0) : "??") + " fps";
 
-  // Stats logic
-  const ft = Math.round(currentUniverse.stats.force_time / 4) + "%<br>";
-  statsbox.innerHTML = fpsStr + "<br>" + days + "<br>Load: " + ft;
+  // share of the wall-clock time spent computing forces
+  const load = Math.round((currentUniverse.stats.force_time / elapsed) * 100) + "%<br>";
+  statsbox.innerHTML = fpsStr + "<br>" + days + "<br>Load: " + load;
 
   // Reset force_time accumulator
   currentUniverse.stats.force_time = 0;
