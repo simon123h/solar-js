@@ -182,32 +182,30 @@ export class Universe {
   }
 
   /**
-   * Performs a single integration step using the Velocity Verlet method.
+   * Performs a single integration step using the position Verlet (drift-kick-drift) method.
+   * This is second-order accurate and symplectic, so energy stays bounded over long runs.
    */
   integration_step(): void {
     const dt = this.physics.dt;
     const dt2 = dt / 2;
 
-    // update forces (acceleration)
-    this.update_forces();
-
+    // drift: half a step of motion at the current velocity
     for (const p of this.planets) {
-      // auxiliary values
-      const dt2pax = dt2 * p.ax;
-      const dt2pay = dt2 * p.ay;
+      p.x += dt2 * p.vx;
+      p.y += dt2 * p.vy;
+    }
 
-      // second bit of velocity step (here done first for performance)
-      p.vx += dt2pax;
-      p.vy += dt2pay;
+    // kick: full velocity step with the acceleration at the midpoint
+    this.update_forces();
+    for (const p of this.planets) {
+      p.vx += dt * p.ax;
+      p.vy += dt * p.ay;
+    }
 
-      // do spatial step
-      p.x += dt * (p.vx + dt2pax);
-      p.y += dt * (p.vy + dt2pay);
-
-      // first bit of velocity step (done second for performance)
-      p.vx += dt2pax;
-      p.vy += dt2pay;
-      // NOTE: this weird order results in the velocities always being wrong!
+    // drift: second half step of motion at the new velocity
+    for (const p of this.planets) {
+      p.x += dt2 * p.vx;
+      p.y += dt2 * p.vy;
     }
 
     this.physics.time += dt;
