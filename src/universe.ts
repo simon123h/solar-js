@@ -16,11 +16,12 @@ export interface PlanetSpec {
 interface PhysicsConfig {
   G: number;
   length_scale: number;
+  /** Plummer softening length in meters; keeps close encounters finite. */
+  softening: number;
   dt: number;
   time: number;
   trace_age: number;
   substeps: number;
-  bbox?: number;
   n_asteroids?: number;
 }
 
@@ -29,7 +30,6 @@ interface ForceBuffers {
   x: Float64Array;
   y: Float64Array;
   gm: Float64Array;
-  soft: Float64Array;
   ax: Float64Array;
   ay: Float64Array;
 }
@@ -57,6 +57,7 @@ export class Universe {
     this.physics = {
       G: 6.674e-11,
       length_scale: 1e9,
+      softening: 1e6,
       dt: 60 * 60 * 6,
       time: 0,
       trace_age: 60 * 60 * 24 * 400,
@@ -151,8 +152,11 @@ export class Universe {
     planet.x = centerOfMass.x + orbit_radius * Math.cos(angle);
     planet.y = centerOfMass.y + orbit_radius * Math.sin(angle);
 
-    // compute the velocity from the equality of gravitational and centripetal forces
-    const velocity = Math.sqrt((this.physics.G * centerOfMass.mass) / orbit_radius);
+    // compute the velocity from the equality of (softened) gravitational and centripetal forces
+    const eps2 = this.physics.softening * this.physics.softening;
+    const velocity = Math.sqrt(
+      (this.physics.G * centerOfMass.mass * orbit_radius * orbit_radius) / Math.pow(orbit_radius * orbit_radius + eps2, 1.5),
+    );
 
     // construct angle from rotating force vector by 90deg
     angle -= (Math.PI / 2) * sign;
@@ -171,7 +175,6 @@ export class Universe {
         x: f64(),
         y: f64(),
         gm: f64(),
-        soft: f64(),
         ax: f64(),
         ay: f64(),
       };
@@ -185,7 +188,7 @@ export class Universe {
   update_forces(): void {
     const start = performance.now();
     const G = this.physics.G;
-    const radius_bbox = this.physics.bbox === null || this.physics.bbox === undefined ? 1 : this.physics.bbox;
+    const eps2 = this.physics.softening * this.physics.softening;
 
     // order planets as nondummy first, then dummy, and copy the hot values into flat arrays
     const n = this.planets.length;
@@ -196,14 +199,12 @@ export class Universe {
     let k = ndl;
     for (const p of this.planets) if (p.is_dummy) order[k++] = p;
 
-    const { x, y, gm, soft, ax, ay } = b;
-    const soft_scale = radius_bbox * this.physics.length_scale;
+    const { x, y, gm, ax, ay } = b;
     for (let i = 0; i < n; i++) {
       const p = order[i];
       x[i] = p.x;
       y[i] = p.y;
       gm[i] = G * p.mass;
-      soft[i] = soft_scale * p.radius;
       ax[i] = ay[i] = 0;
     }
 
@@ -212,16 +213,14 @@ export class Universe {
       const xi = x[i];
       const yi = y[i];
       const gmi = gm[i];
-      const softi = soft[i];
       let axi = 0;
       let ayi = 0;
       for (let j = i + 1; j < n; j++) {
         const dx = x[j] - xi;
         const dy = y[j] - yi;
 
-        // make sure distance is not too close
-        const min_distance = softi + soft[j];
-        const d2 = Math.max(dx * dx + dy * dy, min_distance * min_distance);
+        // softened squared distance, so close encounters stay finite
+        const d2 = dx * dx + dy * dy + eps2;
 
         // gravitational acceleration for both planets
         const f = 1 / (d2 * Math.sqrt(d2));

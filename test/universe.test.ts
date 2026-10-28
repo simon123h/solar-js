@@ -7,7 +7,7 @@ describe("Universe", () => {
     const universe = new Universe();
     expect(universe.planets).toEqual([]);
     expect(universe.physics.time).toBe(0);
-    expect(universe.physics.bbox).toBeUndefined();
+    expect(universe.physics.softening).toBeGreaterThan(0);
   });
 
   it("should generate planets", () => {
@@ -262,18 +262,59 @@ describe("Universe", () => {
     });
   });
 
-  it("should handle bbox in update_forces", () => {
-    const universe = new Universe();
-    // Set bbox to something specific
-    universe.physics.bbox = 0.5;
-    universe.generate_planets([
-      { name: "P1", mass: 1e30, radius: 10, x: 0, y: 0 },
-      { name: "P2", mass: 1e30, radius: 10, x: 0.1, y: 0 }, // Very close
-    ]);
-    // Force calculation uses max(dist, radius_term)
-    // This test ensures the code path using bbox is executed
-    // We just check it doesn't crash and computes something
-    universe.update_forces();
-    expect(universe.planets[0].ax).not.toBeNaN();
+  describe("softening", () => {
+    it("should keep forces finite when planets coincide", () => {
+      const universe = new Universe();
+      universe.generate_planets([
+        { name: "P1", mass: 1e30, radius: 10 },
+        { name: "P2", mass: 1e30, radius: 10 },
+      ]);
+      universe.update_forces();
+      for (const p of universe.planets) {
+        expect(Number.isFinite(p.ax)).toBe(true);
+        expect(Number.isFinite(p.ay)).toBe(true);
+      }
+    });
+
+    it("should match Newtonian gravity far outside the softening length", () => {
+      const universe = new Universe();
+      universe.physics.softening = 1e6;
+      universe.generate_planets([
+        { name: "Sun", mass: 1e30, radius: 10 },
+        { name: "P", mass: 1e24, radius: 5, x: 1e11 },
+      ]);
+      universe.update_forces();
+      const G = universe.physics.G;
+      const r2 = 1e11 * 1e11;
+      // the softened force deviates by about (softening / r)^2
+      expect(universe.planets[1].ax / ((-G * 1e30) / r2)).toBeCloseTo(1, 9);
+      expect(universe.planets[0].ax / ((G * 1e24) / r2)).toBeCloseTo(1, 9);
+    });
+
+    it("should weaken the force inside the softening length", () => {
+      const universe = new Universe();
+      universe.physics.softening = 1e9;
+      universe.generate_planets([
+        { name: "Sun", mass: 1e30, radius: 10 },
+        { name: "P", mass: 1e24, radius: 5, x: 1e8 },
+      ]);
+      universe.update_forces();
+      const newtonian = (universe.physics.G * 1e30) / (1e8 * 1e8);
+      expect(Math.abs(universe.planets[1].ax)).toBeLessThan(newtonian / 100);
+    });
+
+    it("should circularize orbits with the softened force", () => {
+      const universe = new Universe();
+      universe.physics.softening = 5e10;
+      universe.generate_planets([
+        { name: "Sun", mass: 1e30, radius: 10 },
+        { name: "P", mass: 1e24, radius: 5 },
+      ]);
+      const [sun, p] = universe.planets;
+      universe.circularize(p, 1e11, sun);
+      universe.update_forces();
+      // centripetal acceleration v^2 / r equals the gravitational acceleration
+      expect((p.v * p.v) / 1e11).toBeCloseTo(Math.hypot(p.ax, p.ay), 12);
+    });
   });
 });

@@ -10,6 +10,7 @@ export default function createNBodyUniverse(random: () => number = Math.random):
   universe.random = random;
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e5;
+  universe.physics.softening = 5e5;
   universe.physics.dt = 60 * 60 * 24;
   universe.physics.trace_age = 1e7;
   universe.physics.substeps = 1;

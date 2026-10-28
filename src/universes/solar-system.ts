@@ -15,6 +15,7 @@ export default function createSolarSystem(random: () => number = Math.random): U
   universe.random = random;
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e9;
+  universe.physics.softening = 1e9;
   universe.physics.dt = 60 * 60 * 6;
   universe.physics.trace_age = 60 * 60 * 24 * 400;
   universe.physics.substeps = 2;

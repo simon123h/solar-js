@@ -183,8 +183,4 @@ function zoom_canvas(event: WheelEvent): void {
   if (!currentUniverse) return;
   const zoom_factor = 1 + event.deltaY / 2e4;
   currentUniverse.physics.length_scale *= zoom_factor;
-  if (currentUniverse.physics.bbox === null || currentUniverse.physics.bbox === undefined) {
-    currentUniverse.physics.bbox = 1;
-  }
-  currentUniverse.physics.bbox /= zoom_factor;
 }
