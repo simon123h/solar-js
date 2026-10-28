@@ -15,17 +15,34 @@ const universeFactories: Record<string, UniverseFactory> = {
 /** Current active universe instance. */
 let currentUniverse: Universe | null = null;
 
-/** Interval ID for the simulation loop. */
-let simulationInterval: number | null = null;
+/** Wall-clock time in milliseconds per simulation tick at normal speed. */
+const TICK_MS = 20;
+
+/** Longest frame (e.g. after a hidden tab) that is simulated in one go, to avoid a catch-up spiral. */
+const MAX_FRAME_MS = 250;
+
+/** How often the statistics display is refreshed, in milliseconds. */
+const STATS_INTERVAL_MS = 500;
+
+/** Canvas and its 2d context, set up in init. */
+let canvas: HTMLCanvasElement;
+let ctx: CanvasRenderingContext2D;
+
+/** Fixed-timestep loop state. */
+const loop = {
+  last_frame: 0,
+  accumulator: 0,
+  ticks: 0,
+};
 
 /** Statistics state. */
 interface StatsState {
-  n: number;
+  frames: number;
   time: number;
 }
 
-let _last_stats: StatsState = {
-  n: 0,
+const _last_stats: StatsState = {
+  frames: 0,
   time: performance.now(),
 };
 
@@ -34,6 +51,9 @@ let _last_stats: StatsState = {
  * Sets up event listeners and starts the default simulation.
  */
 function init(): void {
+  canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
   const universeSelect = document.getElementById("universe-select") as HTMLSelectElement;
   universeSelect.addEventListener("change", (e: Event) => change_universe(e.target as HTMLSelectElement));
 
@@ -55,44 +75,59 @@ if (document.readyState === "loading") {
 }
 
 /**
- * Starts the simulation loop.
+ * Starts the simulation loop: simulates in fixed time steps and draws once per display frame.
  */
 function run_simulation(): void {
-  let n = 0;
-  if (simulationInterval) clearInterval(simulationInterval);
+  loop.last_frame = performance.now();
+  requestAnimationFrame(frame);
+}
 
-  simulationInterval = window.setInterval(function () {
-    if (!currentUniverse) return;
-    n += 1;
-    // do integration step(s)
-    for (let i = 0; i < currentUniverse.physics.substeps; i++) {
-      currentUniverse.integration_step();
+/**
+ * Handles one display frame.
+ * @param now - The frame timestamp in milliseconds.
+ */
+function frame(now: number): void {
+  requestAnimationFrame(frame);
+  const elapsed = Math.min(now - loop.last_frame, MAX_FRAME_MS);
+  loop.last_frame = now;
+
+  if (currentUniverse) {
+    loop.accumulator += elapsed;
+    while (loop.accumulator >= TICK_MS) {
+      tick(currentUniverse);
+      loop.accumulator -= TICK_MS;
     }
-    // update visualization
-    redraw();
-    // manage trace
-    if (n % 5 === 0) currentUniverse.manage_trace();
-    // do statistics
-    if (n % 20 === 0) do_stats(n);
-  }, 20);
+  }
+
+  redraw();
+  _last_stats.frames += 1;
+  if (now - _last_stats.time >= STATS_INTERVAL_MS) do_stats(now);
+}
+
+/**
+ * Advances the universe by one tick, i.e. its configured number of substeps.
+ * @param universe - The universe to advance.
+ */
+function tick(universe: Universe): void {
+  for (let i = 0; i < universe.physics.substeps; i++) {
+    universe.integration_step();
+  }
+  loop.ticks += 1;
+  if (loop.ticks % 5 === 0) universe.manage_trace();
 }
 
 /**
  * Redraws the universe visualization on the canvas.
  */
-async function redraw(): Promise<void> {
+function redraw(): void {
   if (!currentUniverse) return;
   const scale = currentUniverse.physics.length_scale;
-  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 
   // Basic resizing logic
   if (canvas.width !== canvas.offsetWidth || canvas.height !== canvas.offsetHeight) {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
   }
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
 
   // fill black
   ctx.fillStyle = "black";
@@ -138,19 +173,18 @@ async function redraw(): Promise<void> {
 
 /**
  * Updates the statistics display.
- * @param n - The current frame count.
+ * @param now - The current time in milliseconds.
  */
-function do_stats(n: number): void {
+function do_stats(now: number): void {
   if (!currentUniverse) return;
   const statsbox = document.getElementById("stats-box");
   if (!statsbox) return;
 
   const days = "Day " + (currentUniverse.physics.time / 60 / 60 / 24).toFixed(0);
-  const now = performance.now();
   const elapsed = now - _last_stats.time;
-  const fps = ((n - _last_stats.n) / elapsed) * 1000;
+  const fps = (_last_stats.frames / elapsed) * 1000;
   _last_stats.time = now;
-  _last_stats.n = n;
+  _last_stats.frames = 0;
   const fpsStr = (fps ? fps.toFixed(0) : "??") + " fps";
 
   // share of the wall-clock time spent computing forces
@@ -171,7 +205,9 @@ function change_universe(select: { value: string }): void {
     currentUniverse = factory();
     // Reset stats to avoid huge spikes or weirdness
     _last_stats.time = performance.now();
-    _last_stats.n = 0;
+    _last_stats.frames = 0;
+    loop.accumulator = 0;
+    loop.ticks = 0;
     redraw();
   }
 }
