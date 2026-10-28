@@ -2,6 +2,7 @@ import createSolarSystem from "./universes/solar-system";
 import createGalaxyCollision from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
 import { Universe } from "./universe";
+import { get_local_storage, load_settings, save_settings } from "./settings";
 
 type UniverseFactory = () => Universe;
 
@@ -60,19 +61,42 @@ function init(): void {
   ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
   const universeSelect = document.getElementById("universe-select") as HTMLSelectElement;
-  universeSelect.addEventListener("change", (e: Event) => change_universe(e.target as HTMLSelectElement));
-
+  const speedSelect = document.getElementById("speed-select") as HTMLSelectElement;
   const pauseButton = document.getElementById("pause-button") as HTMLButtonElement;
+
+  // restore the saved settings; the select options define which values are valid
+  const storage = get_local_storage();
+  const options = (select: HTMLSelectElement) => Array.from(select.options, (o) => o.value);
+  const settings = load_settings(
+    storage,
+    { universe: "solar-system", speed: 1 },
+    {
+      universe: (value) => options(universeSelect).includes(value) && value in universeFactories,
+      speed: (value) => options(speedSelect).includes(String(value)),
+    },
+  );
+  universeSelect.value = settings.universe;
+  speedSelect.value = String(settings.speed);
+  loop.speed = settings.speed;
+
+  const save = () => save_settings(storage, { universe: universeSelect.value, speed: loop.speed });
+
+  universeSelect.addEventListener("change", (e: Event) => {
+    change_universe(e.target as HTMLSelectElement);
+    save();
+  });
   pauseButton.addEventListener("click", () => {
     loop.paused = !loop.paused;
     pauseButton.textContent = loop.paused ? "Resume" : "Pause";
   });
   document.getElementById("reset-button")!.addEventListener("click", () => change_universe(universeSelect));
-  const speedSelect = document.getElementById("speed-select") as HTMLSelectElement;
-  speedSelect.addEventListener("change", () => (loop.speed = Number(speedSelect.value)));
+  speedSelect.addEventListener("change", () => {
+    loop.speed = Number(speedSelect.value);
+    save();
+  });
 
-  // set the default universe
-  change_universe({ value: "solar-system" } as HTMLSelectElement);
+  // open the saved (or default) universe
+  change_universe(universeSelect);
 
   // start the simulation
   run_simulation();
