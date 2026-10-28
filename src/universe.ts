@@ -26,6 +26,16 @@ interface PhysicsConfig {
   n_asteroids?: number;
 }
 
+interface ForceBuffers {
+  order: Planet[];
+  x: Float64Array;
+  y: Float64Array;
+  gm: Float64Array;
+  soft: Float64Array;
+  ax: Float64Array;
+  ay: Float64Array;
+}
+
 interface Stats {
   force_time: number;
 }
@@ -37,6 +47,7 @@ export class Universe {
   planets: Planet[];
   physics: PhysicsConfig;
   stats: Stats;
+  private force_buffers: ForceBuffers | null = null;
 
   /**
    * Creates a new Universe instance.
@@ -138,6 +149,25 @@ export class Universe {
   }
 
   /**
+   * Returns scratch arrays for the force computation, reallocating only when the planet count changes.
+   */
+  private buffers(n: number): ForceBuffers {
+    if (this.force_buffers === null || this.force_buffers.x.length !== n) {
+      const f64 = () => new Float64Array(n);
+      this.force_buffers = {
+        order: new Array<Planet>(n),
+        x: f64(),
+        y: f64(),
+        gm: f64(),
+        soft: f64(),
+        ax: f64(),
+        ay: f64(),
+      };
+    }
+    return this.force_buffers;
+  }
+
+  /**
    * Updates the gravitational forces for all planets.
    */
   update_forces(): void {
@@ -145,38 +175,58 @@ export class Universe {
     const G = this.physics.G;
     const radius_bbox = this.physics.bbox === null || this.physics.bbox === undefined ? 1 : this.physics.bbox;
 
-    // reset forces
-    for (const planet of this.planets) {
-      planet.ax = planet.ay = 0;
-    }
+    // order planets as nondummy first, then dummy, and copy the hot values into flat arrays
+    const n = this.planets.length;
+    const b = this.buffers(n);
+    const order = b.order;
+    let ndl = 0;
+    for (const p of this.planets) if (!p.is_dummy) order[ndl++] = p;
+    let k = ndl;
+    for (const p of this.planets) if (p.is_dummy) order[k++] = p;
 
-    // split planets into dummy-planets and nondummy-planets
-    const dummy = this.planets.filter((p) => p.is_dummy);
-    const nondummy = this.planets.filter((p) => !p.is_dummy);
-    const ndl = nondummy.length;
-    const dl = dummy.length;
+    const { x, y, gm, soft, ax, ay } = b;
+    const soft_scale = radius_bbox * this.physics.length_scale;
+    for (let i = 0; i < n; i++) {
+      const p = order[i];
+      x[i] = p.x;
+      y[i] = p.y;
+      gm[i] = G * p.mass;
+      soft[i] = soft_scale * p.radius;
+      ax[i] = ay[i] = 0;
+    }
 
     // loop over planet-planet interactions, but exclude dummy-dummy interactions
     for (let i = 0; i < ndl; i++) {
-      const p1 = nondummy[i];
-      for (let j = i + 1; j < ndl + dl; j++) {
-        const p2 = j < ndl ? nondummy[j] : dummy[j - ndl];
-
-        // compute distance between planets
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
-        let distance = Math.sqrt(dx * dx + dy * dy);
+      const xi = x[i];
+      const yi = y[i];
+      const gmi = gm[i];
+      const softi = soft[i];
+      let axi = 0;
+      let ayi = 0;
+      for (let j = i + 1; j < n; j++) {
+        const dx = x[j] - xi;
+        const dy = y[j] - yi;
 
         // make sure distance is not too close
-        distance = Math.max(distance, radius_bbox * (p1.radius + p2.radius) * this.physics.length_scale);
+        const min_distance = softi + soft[j];
+        const d2 = Math.max(dx * dx + dy * dy, min_distance * min_distance);
 
         // gravitational acceleration for both planets
-        const f = G / distance / distance / distance;
-        p1.ax += f * dx * p2.mass;
-        p1.ay += f * dy * p2.mass;
-        p2.ax -= f * dx * p1.mass;
-        p2.ay -= f * dy * p1.mass;
+        const f = 1 / (d2 * Math.sqrt(d2));
+        const fj = f * gm[j];
+        const fi = f * gmi;
+        axi += fj * dx;
+        ayi += fj * dy;
+        ax[j] -= fi * dx;
+        ay[j] -= fi * dy;
       }
+      ax[i] += axi;
+      ay[i] += ayi;
+    }
+
+    for (let i = 0; i < n; i++) {
+      order[i].ax = ax[i];
+      order[i].ay = ay[i];
     }
     this.stats.force_time += performance.now() - start;
   }
