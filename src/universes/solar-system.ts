@@ -1,4 +1,9 @@
-import { Universe } from "../universe";
+import { Universe, PlanetSpec } from "../universe";
+
+/** A planet specification with the radius of its circular orbit around the sun. */
+interface OrbitingSpec extends PlanetSpec {
+  orbitRadius?: number;
+}
 
 /**
  * Creates a solar system universe.
@@ -13,7 +18,7 @@ export default function createSolarSystem(): Universe {
   universe.physics.substeps = 2;
   universe.physics.n_asteroids = 400;
 
-  universe.generate_planets([
+  const specs: OrbitingSpec[] = [
     {
       name: "Sun",
       color: "#ff0",
@@ -93,30 +98,28 @@ export default function createSolarSystem(): Universe {
       radius: 5,
       orbitRadius: 6.089e12,
     },
-  ]);
+  ];
 
   // add the asteroid belt
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
-    universe.generate_planets([
-      {
-        name: "Asteroid" + n,
-        color: "#AAA",
-        mass: 1e15,
-        radius: 1,
-        orbitRadius: 4e11 * (1 + 0.05 * Math.random()),
-        is_dummy: true,
-      },
-    ]);
+    specs.push({
+      name: "Asteroid" + n,
+      color: "#AAA",
+      mass: 1e15,
+      radius: 1,
+      orbitRadius: 4e11 * (1 + 0.05 * Math.random()),
+      is_dummy: true,
+    });
   }
 
+  const planets = universe.generate_planets(specs);
+
   // make all planets circle around the sun
-  const sun = universe.get_planet_by_name("Sun"); // sun should have index 0
-  for (const planet of universe.planets) {
-    if (planet === sun) continue;
-    // We can assume orbitRadius is present because we just added it in generate_planets
-    const orbitRadius = (planet as any).orbitRadius;
-    universe.circularize(planet, orbitRadius, sun);
-  }
+  const sun = planets[0];
+  planets.forEach((planet, i) => {
+    const orbitRadius = specs[i].orbitRadius;
+    if (orbitRadius !== undefined) universe.circularize(planet, orbitRadius, sun);
+  });
 
   return universe;
 }

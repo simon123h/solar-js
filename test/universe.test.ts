@@ -21,6 +21,17 @@ describe("Universe", () => {
     expect(universe.planets[1].color).toBe("#f00");
   });
 
+  it("should return the created planets and copy their initial state", () => {
+    const universe = new Universe();
+    const [p1, p2] = universe.generate_planets([
+      { name: "P1", mass: 100, radius: 10, x: 1, y: 2, vx: 3, vy: 4, shadow: 5, is_dummy: true },
+      { name: "P2", mass: 200, radius: 20 },
+    ]);
+    expect(universe.planets).toEqual([p1, p2]);
+    expect([p1.x, p1.y, p1.vx, p1.vy, p1.shadow, p1.is_dummy]).toEqual([1, 2, 3, 4, 5, true]);
+    expect([p2.x, p2.y, p2.vx, p2.vy, p2.shadow, p2.is_dummy]).toEqual([0, 0, 0, 0, null, false]);
+  });
+
   it("should find planet by name", () => {
     const universe = new Universe();
     universe.generate_planets([

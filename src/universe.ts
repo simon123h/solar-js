@@ -1,6 +1,6 @@
 import { Planet } from "./planet";
 
-interface PlanetSpec {
+export interface PlanetSpec {
   name: string;
   mass: number;
   radius: number;
@@ -9,10 +9,8 @@ interface PlanetSpec {
   y?: number;
   vx?: number;
   vy?: number;
-  orbitRadius?: number;
   shadow?: number;
   is_dummy?: boolean;
-  [key: string]: any;
 }
 
 interface PhysicsConfig {
@@ -68,18 +66,24 @@ export class Universe {
   }
 
   /**
-   * Generates a list of Planet objects from a list of planet specifications.
+   * Generates a list of Planet objects from a list of planet specifications and adds them to the universe.
    * @param planet_specs - List of objects containing planet properties.
+   * @returns The created planets, in the order of the specifications.
    */
-  generate_planets(planet_specs: PlanetSpec[]): void {
+  generate_planets(planet_specs: PlanetSpec[]): Planet[] {
+    const created: Planet[] = [];
     for (const p of planet_specs) {
       const planet = new Planet(p.name, p.mass, p.radius, p.color);
-      // copy all the other properties
-      for (const prop in p) {
-        (planet as any)[prop] = p[prop];
-      }
-      this.planets.push(planet);
+      planet.x = p.x ?? planet.x;
+      planet.y = p.y ?? planet.y;
+      planet.vx = p.vx ?? planet.vx;
+      planet.vy = p.vy ?? planet.vy;
+      planet.shadow = p.shadow ?? planet.shadow;
+      planet.is_dummy = p.is_dummy ?? planet.is_dummy;
+      created.push(planet);
     }
+    this.planets.push(...created);
+    return created;
   }
 
   /**
