@@ -40,7 +40,10 @@ body {
   text-align: center;
 }
 
-#settings select {
+#settings select,
+#settings button {
   background: none;
   border: none;
+  font: inherit;
+  cursor: pointer;
 }

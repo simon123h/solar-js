@@ -33,7 +33,12 @@ const loop = {
   last_frame: 0,
   accumulator: 0,
   ticks: 0,
+  paused: false,
+  speed: 1,
 };
+
+/** Total energy of the current universe right after it was created, as the reference for drift. */
+let initial_energy = 0;
 
 /** Statistics state. */
 interface StatsState {
@@ -56,6 +61,15 @@ function init(): void {
 
   const universeSelect = document.getElementById("universe-select") as HTMLSelectElement;
   universeSelect.addEventListener("change", (e: Event) => change_universe(e.target as HTMLSelectElement));
+
+  const pauseButton = document.getElementById("pause-button") as HTMLButtonElement;
+  pauseButton.addEventListener("click", () => {
+    loop.paused = !loop.paused;
+    pauseButton.textContent = loop.paused ? "Resume" : "Pause";
+  });
+  document.getElementById("reset-button")!.addEventListener("click", () => change_universe(universeSelect));
+  const speedSelect = document.getElementById("speed-select") as HTMLSelectElement;
+  speedSelect.addEventListener("change", () => (loop.speed = Number(speedSelect.value)));
 
   // set the default universe
   change_universe({ value: "solar-system" } as HTMLSelectElement);
@@ -91,8 +105,8 @@ function frame(now: number): void {
   const elapsed = Math.min(now - loop.last_frame, MAX_FRAME_MS);
   loop.last_frame = now;
 
-  if (currentUniverse) {
-    loop.accumulator += elapsed;
+  if (currentUniverse && !loop.paused) {
+    loop.accumulator += elapsed * loop.speed;
     while (loop.accumulator >= TICK_MS) {
       tick(currentUniverse);
       loop.accumulator -= TICK_MS;
@@ -193,7 +207,8 @@ function do_stats(now: number): void {
 
   // share of the wall-clock time spent computing forces
   const load = Math.round((currentUniverse.stats.force_time / elapsed) * 100) + "%<br>";
-  statsbox.innerHTML = fpsStr + "<br>" + days + "<br>Load: " + load;
+  const energy_drift = (currentUniverse.total_energy() - initial_energy) / (Math.abs(initial_energy) || 1);
+  statsbox.innerHTML = fpsStr + "<br>" + days + "<br>Load: " + load + "dE/E: " + energy_drift.toExponential(1);
 
   // Reset force_time accumulator
   currentUniverse.stats.force_time = 0;
@@ -212,6 +227,7 @@ function change_universe(select: { value: string }): void {
     _last_stats.frames = 0;
     loop.accumulator = 0;
     loop.ticks = 0;
+    initial_energy = currentUniverse.total_energy();
     redraw();
   }
 }
