@@ -1,3 +1,5 @@
+import { createApp } from "vue";
+import App from "./App.vue";
 import createSolarSystem from "./universes/solar-system";
 import createGalaxyCollision from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
@@ -6,15 +8,13 @@ import { Universe } from "./universe";
 import { format_time, scale_bar } from "./units";
 import { DEFAULT_SETTINGS, get_local_storage, load_settings, save_settings } from "./settings";
 import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, encounter_problem, galaxy_options } from "./galaxy-settings";
-import { init_galaxy_panel } from "./galaxy-panel";
 import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, solar_options } from "./solar-settings";
-import { init_solar_panel } from "./solar-panel";
 import { DEFAULT_N_BODY_SETTINGS, NBodySettings, n_body_options } from "./n-body-settings";
-import { init_n_body_panel } from "./n-body-panel";
 
 type UniverseFactory = () => Universe;
 
 /** The settings of each scenario. */
+let currentUniverseKey = "solar-system";
 let galaxy_settings: GalaxySettings = DEFAULT_GALAXY_SETTINGS;
 let solar_settings: SolarSystemSettings = DEFAULT_SOLAR_SETTINGS;
 let n_body_settings: NBodySettings = DEFAULT_N_BODY_SETTINGS;
@@ -41,6 +41,9 @@ const STATS_INTERVAL_MS = 500;
 /** Canvas and its 2d context, set up in init. */
 let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
+
+/** Vue app component instance handle. */
+let appInstance: InstanceType<typeof App> | null = null;
 
 /** Fixed-timestep loop state. */
 const loop = {
@@ -73,19 +76,17 @@ function init(): void {
   canvas = document.getElementById("canvas") as HTMLCanvasElement;
   ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-  const universeSelect = document.getElementById("universe-select") as HTMLSelectElement;
-  const speedSelect = document.getElementById("speed-select") as HTMLSelectElement;
-  const pauseButton = document.getElementById("pause-button") as HTMLButtonElement;
+  const validUniverses = ["solar-system", "galaxy-collision", "n-body-universe"];
+  const validSpeeds = [0.25, 0.5, 1, 2, 4];
 
-  // restore the saved settings; the select options define which values are valid
+  // restore the saved settings
   const storage = get_local_storage();
-  const options = (select: HTMLSelectElement) => Array.from(select.options, (o) => o.value);
   const settings = load_settings(storage, DEFAULT_SETTINGS, {
-    universe: (value) => options(universeSelect).includes(value) && value in universeFactories,
-    speed: (value) => options(speedSelect).includes(String(value)),
+    universe: (value) => validUniverses.includes(value) && value in universeFactories,
+    speed: (value) => validSpeeds.includes(value),
   });
-  universeSelect.value = settings.universe;
-  speedSelect.value = String(settings.speed);
+
+  currentUniverseKey = settings.universe;
   loop.speed = settings.speed;
   galaxy_settings = settings.galaxy;
   solar_settings = settings.solar;
@@ -93,94 +94,81 @@ function init(): void {
 
   const save = () =>
     save_settings(storage, {
-      universe: universeSelect.value,
+      universe: currentUniverseKey,
       speed: loop.speed,
       galaxy: galaxy_settings,
       solar: solar_settings,
       nbody: n_body_settings,
     });
 
-  const settingsButton = document.getElementById("scenario-settings-button") as HTMLButtonElement;
-  let panel_open = false;
-
-  const update_panels_ui = () => {
-    const universe = universeSelect.value;
-    galaxy_panel.set_open(universe === "galaxy-collision" && panel_open);
-    solar_panel.set_open(universe === "solar-system" && panel_open);
-    n_body_panel.set_open(universe === "n-body-universe" && panel_open);
-  };
-
-  const solar_panel = init_solar_panel(solar_settings, (next) => {
-    solar_settings = next;
-    change_universe(universeSelect);
-    save();
-  });
-
-  const n_body_panel = init_n_body_panel(n_body_settings, (next) => {
-    n_body_settings = next;
-    change_universe(universeSelect);
-    save();
-  });
-
-  const galaxy_panel = init_galaxy_panel(galaxy_settings, (next) => {
-    const problem = encounter_problem(next);
-    if (problem) {
-      galaxy_panel.show_message(`${problem} The scene was not changed.`);
-      return;
-    }
-    const previous = galaxy_settings;
-    galaxy_settings = next;
-    try {
-      change_universe(universeSelect);
-      galaxy_panel.show_message("");
+  // Mount Vue Application overlay
+  const vueApp = createApp(App, {
+    initialUniverse: currentUniverseKey,
+    initialSpeed: loop.speed,
+    initialGalaxy: galaxy_settings,
+    initialSolar: solar_settings,
+    initialNBody: n_body_settings,
+    initialStats: "loading...",
+    onChangeUniverse(nextUniverse: string) {
+      currentUniverseKey = nextUniverse;
+      change_universe(currentUniverseKey);
       save();
-    } catch (error) {
-      // the scene could not be built, so the previous one keeps running
-      galaxy_settings = previous;
-      const reason =
-        error instanceof Error && error.message.includes("no sideways speed")
-          ? "No starting speed gives this closest approach with these settings; with friction a first pass is either a plunge or a wide miss. Try a slightly different pericenter or eccentricity."
-          : `This encounter cannot be started: ${error instanceof Error ? error.message : error}`;
-      galaxy_panel.show_message(`${reason} The scene was not changed.`);
-    }
+    },
+    onChangeSpeed(nextSpeed: number) {
+      loop.speed = nextSpeed;
+      save();
+    },
+    onTogglePause(paused: boolean) {
+      loop.paused = paused;
+    },
+    onReset() {
+      change_universe(currentUniverseKey);
+    },
+    onUpdateGalaxy(next: GalaxySettings) {
+      const problem = encounter_problem(next);
+      if (problem) {
+        appInstance?.setGalaxyMessage(`${problem} The scene was not changed.`);
+        return;
+      }
+      const previous = galaxy_settings;
+      galaxy_settings = next;
+      try {
+        change_universe(currentUniverseKey);
+        appInstance?.setGalaxyMessage("");
+        save();
+      } catch (error) {
+        galaxy_settings = previous;
+        appInstance?.setGalaxySettings(previous);
+        const reason =
+          error instanceof Error && error.message.includes("no sideways speed")
+            ? "No starting speed gives this closest approach with these settings; with friction a first pass is either a plunge or a wide miss. Try a slightly different pericenter or eccentricity."
+            : `This encounter cannot be started: ${error instanceof Error ? error.message : error}`;
+        appInstance?.setGalaxyMessage(`${reason} The scene was not changed.`);
+      }
+    },
+    onUpdateSolar(next: SolarSystemSettings) {
+      solar_settings = next;
+      change_universe(currentUniverseKey);
+      save();
+    },
+    onUpdateNbody(next: NBodySettings) {
+      n_body_settings = next;
+      change_universe(currentUniverseKey);
+      save();
+    },
   });
 
-  settingsButton.addEventListener("click", () => {
-    panel_open = !panel_open;
-    update_panels_ui();
-  });
-
-  universeSelect.addEventListener("change", (e: Event) => {
-    change_universe(e.target as HTMLSelectElement);
-    update_panels_ui();
-    save();
-  });
-  pauseButton.addEventListener("click", () => {
-    loop.paused = !loop.paused;
-    const pauseLabel = document.getElementById("pause-label");
-    if (pauseLabel) {
-      pauseLabel.textContent = loop.paused ? "Resume" : "Pause";
-    } else {
-      pauseButton.textContent = loop.paused ? "Resume" : "Pause";
-    }
-  });
-  document.getElementById("reset-button")!.addEventListener("click", () => change_universe(universeSelect));
-  speedSelect.addEventListener("change", () => {
-    loop.speed = Number(speedSelect.value);
-    save();
-  });
+  appInstance = vueApp.mount("#app") as unknown as InstanceType<typeof App>;
 
   // open the saved (or default) universe
   try {
-    change_universe(universeSelect);
+    change_universe(currentUniverseKey);
   } catch {
-    // saved galaxy settings that cannot be built (e.g. after the simulation changed): start over with the defaults
     galaxy_settings = DEFAULT_GALAXY_SETTINGS;
-    galaxy_panel.show_settings(galaxy_settings);
-    change_universe(universeSelect);
+    appInstance.setGalaxySettings(galaxy_settings);
+    change_universe(currentUniverseKey);
     save();
   }
-  update_panels_ui();
 
   // start the simulation
   run_simulation();
@@ -385,8 +373,6 @@ function draw_scale_bar(width: number, height: number): void {
  */
 function do_stats(now: number): void {
   if (!currentUniverse) return;
-  const statsbox = document.getElementById("stats-box");
-  if (!statsbox) return;
 
   const time = format_time(currentUniverse.physics.time, currentUniverse.units);
   const elapsed = now - _last_stats.time;
@@ -400,7 +386,9 @@ function do_stats(now: number): void {
   // energy removed on purpose by dynamical friction is not an error, so it is added back
   const energy = currentUniverse.total_energy() + currentUniverse.stats.dissipated_energy;
   const energy_drift = (energy - initial_energy) / (Math.abs(initial_energy) || 1);
-  statsbox.innerHTML = fpsStr + "<br>" + time + "<br>Load: " + load + "dE/E: " + energy_drift.toExponential(1);
+  const statsHtml = fpsStr + "<br>" + time + "<br>Load: " + load + "dE/E: " + energy_drift.toExponential(1);
+
+  appInstance?.updateStats(statsHtml);
 
   // Reset force_time accumulator
   currentUniverse.stats.force_time = 0;
@@ -408,10 +396,10 @@ function do_stats(now: number): void {
 
 /**
  * Changes the active universe based on the user's selection.
- * @param select - The select element or object with a value property.
+ * @param universeKey - Key of the universe to activate.
  */
-function change_universe(select: { value: string }): void {
-  const factory = universeFactories[select.value];
+function change_universe(universeKey: string): void {
+  const factory = universeFactories[universeKey];
   if (factory) {
     currentUniverse = factory();
     // Reset stats to avoid huge spikes or weirdness

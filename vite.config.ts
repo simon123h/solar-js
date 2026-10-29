@@ -1,9 +1,11 @@
 import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
 
 export default defineConfig(({ mode }) => {
   const basePath = process.env.VITE_BASE_PATH;
 
   return {
+    plugins: [vue()],
     root: ".",
     base: basePath ? `/${basePath}/` : "/",
     build: {
