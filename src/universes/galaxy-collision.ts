@@ -1,5 +1,31 @@
 import { Universe } from "../universe";
 
+/** Number of spiral arms of each galaxy. */
+const ARMS = 2;
+
+/** How tightly the arms wind: the angle gained per e-fold in radius (1 / tan of a ~20 degree pitch angle). */
+const WINDING = 2.75;
+
+/** Radius of the innermost orbit, where the arms start. */
+const INNER_RADIUS = 0.2e11;
+
+/** Angular spread of the stars around the center line of an arm, in radians. */
+const ARM_SPREAD = 0.3;
+
+/**
+ * Picks the angle at which to place a star so that stars gather along logarithmic spiral arms.
+ * The arms trail behind the direction of rotation, like in real spiral galaxies.
+ * @param radius - The orbit radius of the star.
+ * @param random - Source of randomness.
+ * @returns The angle in radians.
+ */
+export function spiral_angle(radius: number, random: () => number): number {
+  const arm = Math.floor(random() * ARMS);
+  // the sum of three uniform numbers is roughly bell-shaped, with a standard deviation of 0.5
+  const scatter = random() + random() + random() - 1.5;
+  return (arm * 2 * Math.PI) / ARMS + WINDING * Math.log(radius / INNER_RADIUS) + 2 * ARM_SPREAD * scatter;
+}
+
 /**
  * Creates a galaxy collision universe.
  * @param random - Source of randomness, e.g. a seeded generator for a reproducible scene.
@@ -54,7 +80,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
       is_dummy: !is_earth,
     };
     const radius = 1e11 * (0.2 + universe.random());
-    universe.circularize(universe.generate_planets([planet])[0], radius, mw, 0.9);
+    universe.circularize(universe.generate_planets([planet])[0], radius, mw, 0.9, spiral_angle(radius, universe.random));
   }
 
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
@@ -67,7 +93,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
       is_dummy: true,
     };
     const radius = 1e11 * (0.2 + universe.random());
-    universe.circularize(universe.generate_planets([planet])[0], radius, ag, 0.9);
+    universe.circularize(universe.generate_planets([planet])[0], radius, ag, 0.9, spiral_angle(radius, universe.random));
   }
 
   return universe;
