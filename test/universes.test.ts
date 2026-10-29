@@ -100,7 +100,7 @@ describe("Universe Factories", () => {
     });
 
     it("should give both galaxies a halo", () => {
-      const universe = createGalaxyCollision(seeded_random(1), GALAXY_HALO);
+      const universe = createGalaxyCollision(seeded_random(1), { halo: GALAXY_HALO });
       expect(universe.halos.map((h) => h.center.name)).toEqual(["Milky Way", "Andromeda Galaxy"]);
       expect(universe.halos.every((h) => h.v0 === GALAXY_HALO.v0)).toBe(true);
     });
@@ -108,7 +108,7 @@ describe("Universe Factories", () => {
     it("should flatten the rotation curve", () => {
       const slope = (universe: Universe) => mean_speed(universe, 0.2e11, 0.35e11) / mean_speed(universe, 0.95e11, 1.2e11);
       const plain = slope(createGalaxyCollision(seeded_random(1)));
-      const with_halo = slope(createGalaxyCollision(seeded_random(1), GALAXY_HALO));
+      const with_halo = slope(createGalaxyCollision(seeded_random(1), { halo: GALAXY_HALO }));
       // a Keplerian disk is almost twice as fast at its inner edge as at its outer edge
       expect(plain).toBeGreaterThan(1.7);
       expect(with_halo).toBeLessThan(1.5);
@@ -116,7 +116,8 @@ describe("Universe Factories", () => {
     });
 
     it("should place the stars in the same spiral arms with or without halos", () => {
-      const positions = (halo: typeof GALAXY_HALO | null) => createGalaxyCollision(seeded_random(2), halo).planets.map((p) => [p.x, p.y]);
+      const positions = (halo: typeof GALAXY_HALO | null) =>
+        createGalaxyCollision(seeded_random(2), { halo }).planets.map((p) => [p.x, p.y]);
       expect(positions(GALAXY_HALO)).toEqual(positions(null));
     });
   });

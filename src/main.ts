@@ -10,7 +10,7 @@ type UniverseFactory = () => Universe;
 const universeFactories: Record<string, UniverseFactory> = {
   "solar-system": createSolarSystem,
   "galaxy-collision": createGalaxyCollision,
-  "galaxy-collision-halo": () => createGalaxyCollision(Math.random, GALAXY_HALO),
+  "galaxy-collision-halo": () => createGalaxyCollision(Math.random, { halo: GALAXY_HALO }),
   "n-body-universe": createNBodyUniverse,
 };
 

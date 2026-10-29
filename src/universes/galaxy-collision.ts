@@ -36,13 +36,20 @@ export const GALAXY_HALO: HaloSpec = {
   truncation_radius: 2e11,
 };
 
+/** Optional features of the galaxy collision. */
+export interface GalaxyOptions {
+  /** If given, both galaxies get a dark matter halo with these parameters; none by default. */
+  halo?: HaloSpec | null;
+}
+
 /**
  * Creates a galaxy collision universe.
  * @param random - Source of randomness, e.g. a seeded generator for a reproducible scene.
- * @param halo - If given, both galaxies get a dark matter halo with these parameters; none by default.
+ * @param options - Optional features such as dark matter halos.
  * @returns The created Universe instance configured with two colliding galaxies.
  */
-export default function createGalaxyCollision(random: () => number = Math.random, halo: HaloSpec | null = null): Universe {
+export default function createGalaxyCollision(random: () => number = Math.random, options: GalaxyOptions = {}): Universe {
+  const { halo = null } = options;
   const universe = new Universe();
   universe.random = random;
   universe.physics.G = 6.674e-11;
