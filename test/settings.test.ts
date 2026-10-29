@@ -31,8 +31,20 @@ describe("settings", () => {
   it("should round-trip saved settings", () => {
     const storage = fake_storage();
     const merger = GALAXY_PRESETS[2].settings;
-    save_settings(storage, { universe: "galaxy-collision", speed: 2, galaxy: merger });
-    expect(load_settings(storage, defaults, is_valid)).toEqual({ universe: "galaxy-collision", speed: 2, galaxy: merger });
+    save_settings(storage, {
+      universe: "galaxy-collision",
+      speed: 2,
+      galaxy: merger,
+      solar: { asteroids: 100, include_pluto: false },
+      nbody: { bodies: 200, velocity_arrangement: "circular", velocity_scale: 1.5, varied_masses: true },
+    });
+    expect(load_settings(storage, defaults, is_valid)).toEqual({
+      universe: "galaxy-collision",
+      speed: 2,
+      galaxy: merger,
+      solar: { asteroids: 100, include_pluto: false },
+      nbody: { bodies: 200, velocity_arrangement: "circular", velocity_scale: 1.5, varied_masses: true },
+    });
   });
 
   it("should use the defaults when nothing is saved or there is no storage", () => {
@@ -52,6 +64,8 @@ describe("settings", () => {
       universe: "solar-system",
       speed: 2,
       galaxy: DEFAULT_GALAXY_SETTINGS,
+      solar: defaults.solar,
+      nbody: defaults.nbody,
     });
     const wrong_types = JSON.stringify({ universe: 5, speed: "2" });
     expect(load_settings(fake_storage({ [SETTINGS_KEY]: wrong_types }), defaults, is_valid)).toEqual(defaults);

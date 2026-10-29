@@ -1,4 +1,6 @@
 import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, LEGACY_GALAXY_UNIVERSES, normalize_galaxy_settings } from "./galaxy-settings";
+import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, normalize_solar_settings } from "./solar-settings";
+import { DEFAULT_N_BODY_SETTINGS, NBodySettings, normalize_n_body_settings } from "./n-body-settings";
 
 /** The control pane settings that persist between visits. */
 export interface Settings {
@@ -6,10 +8,20 @@ export interface Settings {
   speed: number;
   /** The settings of the galaxy collision, which are kept even while another universe is shown. */
   galaxy: GalaxySettings;
+  /** The settings of the solar system scenario. */
+  solar: SolarSystemSettings;
+  /** The settings of the generic n-body simulation scenario. */
+  nbody: NBodySettings;
 }
 
 /** The settings to start with, before anything has been saved. */
-export const DEFAULT_SETTINGS: Settings = { universe: "solar-system", speed: 1, galaxy: DEFAULT_GALAXY_SETTINGS };
+export const DEFAULT_SETTINGS: Settings = {
+  universe: "solar-system",
+  speed: 1,
+  galaxy: DEFAULT_GALAXY_SETTINGS,
+  solar: DEFAULT_SOLAR_SETTINGS,
+  nbody: DEFAULT_N_BODY_SETTINGS,
+};
 
 /** The part of the Storage interface the settings need. */
 export type SettingsStorage = Pick<Storage, "getItem" | "setItem">;
@@ -54,6 +66,8 @@ export function load_settings(
     }
     if (typeof saved?.speed === "number" && is_valid.speed(saved.speed)) settings.speed = saved.speed;
     if (saved?.galaxy !== undefined) settings.galaxy = normalize_galaxy_settings(saved.galaxy);
+    if (saved?.solar !== undefined) settings.solar = normalize_solar_settings(saved.solar);
+    if (saved?.nbody !== undefined) settings.nbody = normalize_n_body_settings(saved.nbody);
   } catch {
     // unreadable storage or corrupt JSON: keep the defaults
   }
