@@ -25,6 +25,36 @@ interface PhysicsConfig {
   n_asteroids?: number;
 }
 
+/**
+ * A fixed dark matter halo around a planet, moving with that planet.
+ * It has a flat rotation curve (circular speed v0) outside the core radius and is truncated beyond the
+ * truncation radius: the acceleration towards the center is v0^2 * r * rt^2 / ((r^2 + rc^2) * (r^2 + rt^2)).
+ */
+export interface Halo {
+  center: Planet;
+  v0: number;
+  core_radius: number;
+  truncation_radius: number;
+}
+
+/**
+ * The halo's acceleration towards its center divided by the distance, at squared distance d2.
+ */
+function halo_acceleration_factor(halo: Halo, d2: number): number {
+  const rc2 = halo.core_radius * halo.core_radius;
+  const rt2 = halo.truncation_radius * halo.truncation_radius;
+  return (halo.v0 * halo.v0 * rt2) / ((d2 + rc2) * (d2 + rt2));
+}
+
+/**
+ * The halo's potential energy per unit mass at squared distance d2; zero infinitely far away.
+ */
+function halo_potential(halo: Halo, d2: number): number {
+  const rc2 = halo.core_radius * halo.core_radius;
+  const rt2 = halo.truncation_radius * halo.truncation_radius;
+  return 0.5 * halo.v0 * halo.v0 * (rt2 / (rt2 - rc2)) * Math.log((d2 + rc2) / (d2 + rt2));
+}
+
 interface ForceBuffers {
   order: Planet[];
   x: Float64Array;
@@ -43,6 +73,7 @@ interface Stats {
  */
 export class Universe {
   planets: Planet[];
+  halos: Halo[];
   physics: PhysicsConfig;
   stats: Stats;
   /** Source of randomness for scene setup; replace it with a seeded generator for reproducible scenes. */
@@ -54,6 +85,7 @@ export class Universe {
    */
   constructor() {
     this.planets = [];
+    this.halos = [];
     this.physics = {
       G: 6.674e-11,
       length_scale: 1e9,
@@ -87,6 +119,25 @@ export class Universe {
     }
     this.planets.push(...created);
     return created;
+  }
+
+  /**
+   * Adds a dark matter halo that is centered on a planet and moves with it. The halo pulls on every other
+   * planet, and the planet at its center feels the opposite reaction, so momentum is conserved.
+   * @param center - The planet at the center of the halo.
+   * @param v0 - The circular speed of the flat rotation curve.
+   * @param core_radius - The radius of the halo's core, inside which the rotation speed rises.
+   * @param truncation_radius - The radius beyond which the halo's pull fades out; must exceed the core radius.
+   * @returns The created halo.
+   * @throws If the radii are not positive or the truncation radius does not exceed the core radius.
+   */
+  add_halo(center: Planet, v0: number, core_radius: number, truncation_radius: number): Halo {
+    if (!(core_radius > 0) || !(truncation_radius > core_radius)) {
+      throw new Error("add_halo: need 0 < core_radius < truncation_radius");
+    }
+    const halo = { center, v0, core_radius, truncation_radius };
+    this.halos.push(halo);
+    return halo;
   }
 
   /**
@@ -162,9 +213,14 @@ export class Universe {
 
     // compute the velocity from the equality of (softened) gravitational and centripetal forces
     const eps2 = this.physics.softening * this.physics.softening;
-    const velocity = Math.sqrt(
-      (this.physics.G * centerOfMass.mass * orbit_radius * orbit_radius) / Math.pow(orbit_radius * orbit_radius + eps2, 1.5),
-    );
+    const r2 = orbit_radius * orbit_radius;
+    let centripetal = (this.physics.G * centerOfMass.mass * r2) / Math.pow(r2 + eps2, 1.5);
+    // halos around the attractor(s) pull the planet inwards as well
+    const attractors = Array.isArray(attractor) ? attractor : [attractor];
+    for (const halo of this.halos) {
+      if (attractors.includes(halo.center)) centripetal += halo_acceleration_factor(halo, r2) * r2;
+    }
+    const velocity = Math.sqrt(centripetal);
 
     // construct angle from rotating force vector by 90deg
     angle -= (Math.PI / 2) * sign;
@@ -243,6 +299,31 @@ export class Universe {
       ay[i] += ayi;
     }
 
+    // halos pull every planet towards their center, and the center feels the opposite reaction
+    for (const halo of this.halos) {
+      const ci = order.indexOf(halo.center);
+      if (ci < 0) continue;
+      const cx = x[ci];
+      const cy = y[ci];
+      let reaction_x = 0;
+      let reaction_y = 0;
+      for (let i = 0; i < n; i++) {
+        if (i === ci) continue;
+        const dx = x[i] - cx;
+        const dy = y[i] - cy;
+        const k = halo_acceleration_factor(halo, dx * dx + dy * dy);
+        ax[i] -= k * dx;
+        ay[i] -= k * dy;
+        reaction_x += order[i].mass * k * dx;
+        reaction_y += order[i].mass * k * dy;
+      }
+      const center_mass = order[ci].mass;
+      if (center_mass > 0) {
+        ax[ci] += reaction_x / center_mass;
+        ay[ci] += reaction_y / center_mass;
+      }
+    }
+
     for (let i = 0; i < n; i++) {
       order[i].ax = ax[i];
       order[i].ay = ay[i];
@@ -252,7 +333,7 @@ export class Universe {
 
   /**
    * Computes the total mechanical energy of the system, consistent with the forces in update_forces:
-   * Plummer-softened potential energy, with dummy-dummy pairs excluded.
+   * Plummer-softened potential energy, with dummy-dummy pairs excluded, plus the potential energy in the halos.
    * @returns The kinetic plus potential energy.
    */
   total_energy(): number {
@@ -268,6 +349,14 @@ export class Universe {
         const dx = p2.x - p1.x;
         const dy = p2.y - p1.y;
         energy -= (G * p1.mass * p2.mass) / Math.sqrt(dx * dx + dy * dy + eps2);
+      }
+    }
+    for (const halo of this.halos) {
+      for (const p of this.planets) {
+        if (p === halo.center) continue;
+        const dx = p.x - halo.center.x;
+        const dy = p.y - halo.center.y;
+        energy += p.mass * halo_potential(halo, dx * dx + dy * dy);
       }
     }
     return energy;

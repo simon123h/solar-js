@@ -327,6 +327,162 @@ describe("Universe", () => {
     });
   });
 
+  describe("halo", () => {
+    const v0 = 4e4;
+    const rc = 2e10;
+    const rt = 3e11;
+
+    /** The expected acceleration towards the center at distance d. */
+    const halo_acceleration = (d: number) => (v0 * v0 * d * rt * rt) / ((d * d + rc * rc) * (d * d + rt * rt));
+
+    /** A massive center with a halo and one light star at the given distance, with gravity switched off. */
+    function createHaloUniverse(distance: number, star_mass = 1e10): { universe: Universe; center: Planet; star: Planet } {
+      const universe = new Universe();
+      universe.physics.G = 0;
+      const [center, star] = universe.generate_planets([
+        { name: "Center", mass: 1e30, radius: 1, x: 1e11, y: -2e11 },
+        { name: "Star", mass: star_mass, radius: 1, x: 1e11 + distance, y: -2e11 },
+      ]);
+      universe.add_halo(center, v0, rc, rt);
+      return { universe, center, star };
+    }
+
+    it("should pull planets towards the center of the halo", () => {
+      const { universe, star } = createHaloUniverse(1e11);
+      universe.update_forces();
+      expect(star.ax).toBeCloseTo(-halo_acceleration(1e11), 9);
+      expect(star.ay).toBeCloseTo(0, 12);
+    });
+
+    it("should keep the halo centered on its planet when that planet moves", () => {
+      const { universe, center, star } = createHaloUniverse(1e11);
+      center.x += 5e10;
+      center.y += 7e10;
+      star.x = center.x;
+      star.y = center.y + 1e11;
+      universe.update_forces();
+      expect(star.ax).toBeCloseTo(0, 12);
+      expect(star.ay).toBeCloseTo(-halo_acceleration(1e11), 9);
+    });
+
+    it("should fade out far beyond the truncation radius", () => {
+      const { universe, star } = createHaloUniverse(5e12);
+      universe.update_forces();
+      const far_field = (v0 * v0 * rt * rt) / (5e12 * 5e12 * 5e12);
+      expect(star.ax / -far_field).toBeCloseTo(1, 2);
+    });
+
+    it("should conserve momentum by pulling the center in the opposite direction", () => {
+      const { universe, center, star } = createHaloUniverse(1e11, 1e28);
+      universe.update_forces();
+      expect(center.ax).toBeGreaterThan(0);
+      const net_force = center.mass * center.ax + star.mass * star.ax;
+      expect(net_force / Math.abs(star.mass * star.ax)).toBeCloseTo(0, 12);
+      expect(center.ay).toBeCloseTo(0, 12);
+    });
+
+    it("should not pull on the center when it has no mass", () => {
+      const { universe, center, star } = createHaloUniverse(1e11);
+      center.mass = 0;
+      universe.update_forces();
+      expect(center.ax).toBe(0);
+      expect(star.ax).toBeLessThan(0);
+    });
+
+    it("should ignore a halo whose center is not part of the universe", () => {
+      const universe = new Universe();
+      universe.physics.G = 0;
+      universe.generate_planets([{ name: "Star", mass: 1e10, radius: 1, x: 1e11 }]);
+      universe.add_halo(new Planet("Elsewhere", 1e30, 1), v0, rc, rt);
+      universe.update_forces();
+      expect(universe.planets[0].ax).toBe(0);
+    });
+
+    it("should refuse a halo without a positive core or with a truncation radius inside the core", () => {
+      const universe = new Universe();
+      const center = new Planet("C", 1e30, 1);
+      expect(() => universe.add_halo(center, v0, 0, rt)).toThrow("core_radius");
+      expect(() => universe.add_halo(center, v0, rt, rt)).toThrow("truncation_radius");
+      expect(() => universe.add_halo(center, v0, NaN, rt)).toThrow("core_radius");
+      expect(universe.halos).toEqual([]);
+    });
+
+    it("should give a flat rotation curve between the core and the truncation radius", () => {
+      const universe = new Universe();
+      universe.physics.G = 0;
+      const [center, star] = universe.generate_planets([
+        { name: "Center", mass: 1e30, radius: 1 },
+        { name: "Star", mass: 1e10, radius: 1 },
+      ]);
+      universe.add_halo(center, v0, 1e9, 1e13);
+      universe.circularize(star, 1e11, center);
+      expect(star.v / v0).toBeCloseTo(1, 3);
+    });
+
+    it("should circularize orbits with the pull of the halo included", () => {
+      const universe = new Universe();
+      const [center, star] = universe.generate_planets([
+        { name: "Center", mass: 2e30, radius: 1 },
+        { name: "Star", mass: 1, radius: 1 },
+      ]);
+      universe.add_halo(center, v0, rc, rt);
+      universe.circularize(star, 1e11, center);
+      universe.update_forces();
+      expect((star.v * star.v) / 1e11).toBeCloseTo(Math.hypot(star.ax, star.ay), 12);
+      // the halo makes the orbit faster than the center alone would
+      expect(star.v).toBeGreaterThan(Math.sqrt((universe.physics.G * 2e30) / 1e11));
+    });
+
+    it("should only count the halos around the attractor when circularizing", () => {
+      const orbital_speed = (halo_around: "A" | "B" | "both" | "none", attractor: "A" | "AB") => {
+        const universe = new Universe();
+        const [a, b, star] = universe.generate_planets([
+          { name: "A", mass: 2e30, radius: 1, x: 0 },
+          { name: "B", mass: 2e30, radius: 1, x: 1e12 },
+          { name: "Star", mass: 1, radius: 1 },
+        ]);
+        if (halo_around === "A" || halo_around === "both") universe.add_halo(a, v0, rc, rt);
+        if (halo_around === "B" || halo_around === "both") universe.add_halo(b, v0, rc, rt);
+        universe.circularize(star, 1e11, attractor === "A" ? a : [a, b]);
+        return star.v;
+      };
+      // a halo around the other galaxy does not change the orbit, but one around the attractor does
+      expect(orbital_speed("both", "A")).toBeCloseTo(orbital_speed("A", "A"), 6);
+      expect(orbital_speed("B", "A")).toBeCloseTo(orbital_speed("none", "A"), 6);
+      expect(orbital_speed("A", "A")).toBeGreaterThan(orbital_speed("none", "A"));
+      // around the center of mass of both, both halos count
+      expect(orbital_speed("both", "AB")).toBeGreaterThan(orbital_speed("A", "AB"));
+    });
+
+    it("should add the halo's potential energy", () => {
+      const { universe, star } = createHaloUniverse(1e11, 1e20);
+      const k = rt * rt - rc * rc;
+      const potential = 0.5 * v0 * v0 * ((rt * rt) / k) * Math.log((1e22 + rc * rc) / (1e22 + rt * rt));
+      expect(universe.total_energy() / (star.mass * potential)).toBeCloseTo(1, 12);
+      expect(potential).toBeLessThan(0);
+    });
+
+    it("should conserve energy of a star orbiting inside a halo", () => {
+      const universe = new Universe();
+      universe.physics.softening = 1e9;
+      universe.physics.dt = 60 * 60 * 3;
+      const [center, star] = universe.generate_planets([
+        { name: "Center", mass: 2e30, radius: 1 },
+        { name: "Star", mass: 1e24, radius: 1 },
+      ]);
+      universe.add_halo(center, v0, rc, rt);
+      universe.circularize(star, 1e11, center);
+      const initial_energy = universe.total_energy();
+
+      for (let i = 0; i < 4000; i++) {
+        universe.integration_step();
+        expect(Math.abs((universe.total_energy() - initial_energy) / initial_energy)).toBeLessThan(1e-6);
+      }
+      // still on a circular orbit
+      expect(Math.abs(Math.hypot(star.x - center.x, star.y - center.y) / 1e11 - 1)).toBeLessThan(1e-3);
+    });
+  });
+
   describe("softening", () => {
     it("should keep forces finite when planets coincide", () => {
       const universe = new Universe();
