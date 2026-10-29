@@ -1,33 +1,22 @@
 import createSolarSystem from "./universes/solar-system";
-import createGalaxyCollision, { GALAXY_BULGE_RADIUS, GALAXY_ENCOUNTER, GALAXY_HALO } from "./universes/galaxy-collision";
+import createGalaxyCollision from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
 import { Planet } from "./planet";
 import { Universe } from "./universe";
 import { format_time, scale_bar } from "./units";
 import { DEFAULT_SETTINGS, get_local_storage, load_settings, save_settings } from "./settings";
+import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, encounter_problem, galaxy_options } from "./galaxy-settings";
+import { init_galaxy_panel } from "./galaxy-panel";
 
 type UniverseFactory = () => Universe;
+
+/** The settings of the galaxy collision, which can be changed in the galaxy panel. */
+let galaxy_settings: GalaxySettings = DEFAULT_GALAXY_SETTINGS;
 
 /** Dictionary of universe factory functions. */
 const universeFactories: Record<string, UniverseFactory> = {
   "solar-system": createSolarSystem,
-  "galaxy-collision": createGalaxyCollision,
-  "galaxy-collision-halo": () => createGalaxyCollision(Math.random, { halo: GALAXY_HALO }),
-  "galaxy-collision-realistic": () =>
-    createGalaxyCollision(Math.random, {
-      halo: GALAXY_HALO,
-      bulge_radius: GALAXY_BULGE_RADIUS,
-      friction: true,
-      encounter: GALAXY_ENCOUNTER,
-    }),
-  "galaxy-collision-retrograde": () =>
-    createGalaxyCollision(Math.random, {
-      halo: GALAXY_HALO,
-      bulge_radius: GALAXY_BULGE_RADIUS,
-      spins: [-1, -1],
-      friction: true,
-      encounter: GALAXY_ENCOUNTER,
-    }),
+  "galaxy-collision": () => createGalaxyCollision(Math.random, galaxy_options(galaxy_settings)),
   "n-body-universe": createNBodyUniverse,
 };
 
@@ -92,11 +81,48 @@ function init(): void {
   universeSelect.value = settings.universe;
   speedSelect.value = String(settings.speed);
   loop.speed = settings.speed;
+  galaxy_settings = settings.galaxy;
 
-  const save = () => save_settings(storage, { universe: universeSelect.value, speed: loop.speed, galaxy: settings.galaxy });
+  const save = () => save_settings(storage, { universe: universeSelect.value, speed: loop.speed, galaxy: galaxy_settings });
+
+  // the galaxy panel is only offered for the galaxy collision
+  const galaxyButton = document.getElementById("galaxy-button") as HTMLButtonElement;
+  let galaxy_panel_open = false;
+  const update_galaxy_ui = () => {
+    const is_galaxy = universeSelect.value === "galaxy-collision";
+    galaxyButton.hidden = !is_galaxy;
+    galaxy_panel.set_open(is_galaxy && galaxy_panel_open);
+  };
+  const galaxy_panel = init_galaxy_panel(galaxy_settings, (next) => {
+    const problem = encounter_problem(next);
+    if (problem) {
+      galaxy_panel.show_message(`${problem} The scene was not changed.`);
+      return;
+    }
+    const previous = galaxy_settings;
+    galaxy_settings = next;
+    try {
+      change_universe(universeSelect);
+      galaxy_panel.show_message("");
+      save();
+    } catch (error) {
+      // the scene could not be built, so the previous one keeps running
+      galaxy_settings = previous;
+      const reason =
+        error instanceof Error && error.message.includes("no sideways speed")
+          ? "No starting speed gives this closest approach with these settings; with friction a first pass is either a plunge or a wide miss. Try a slightly different pericenter or eccentricity."
+          : `This encounter cannot be started: ${error instanceof Error ? error.message : error}`;
+      galaxy_panel.show_message(`${reason} The scene was not changed.`);
+    }
+  });
+  galaxyButton.addEventListener("click", () => {
+    galaxy_panel_open = !galaxy_panel_open;
+    update_galaxy_ui();
+  });
 
   universeSelect.addEventListener("change", (e: Event) => {
     change_universe(e.target as HTMLSelectElement);
+    update_galaxy_ui();
     save();
   });
   pauseButton.addEventListener("click", () => {
@@ -110,7 +136,16 @@ function init(): void {
   });
 
   // open the saved (or default) universe
-  change_universe(universeSelect);
+  try {
+    change_universe(universeSelect);
+  } catch {
+    // saved galaxy settings that cannot be built (e.g. after the simulation changed): start over with the defaults
+    galaxy_settings = DEFAULT_GALAXY_SETTINGS;
+    galaxy_panel.show_settings(galaxy_settings);
+    change_universe(universeSelect);
+    save();
+  }
+  update_galaxy_ui();
 
   // start the simulation
   run_simulation();

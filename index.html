@@ -11,9 +11,63 @@
     <canvas id="canvas"></canvas>
     <div id="details-view"></div>
     <div id="stats-box">loading...</div>
+    <div id="galaxy-panel" hidden>
+      <h2>Galaxy collision</h2>
+      <label class="row">
+        Preset
+        <select id="galaxy-preset"></select>
+      </label>
+      <fieldset>
+        <legend>Physics</legend>
+        <label><input type="checkbox" id="galaxy-halo" /> Dark matter halos</label>
+        <label><input type="checkbox" id="galaxy-bulge" /> Extended bulges</label>
+        <label><input type="checkbox" id="galaxy-friction" /> Dynamical friction (galaxies merge)</label>
+      </fieldset>
+      <fieldset>
+        <legend>Rotation</legend>
+        <label class="row">
+          Milky Way
+          <select id="galaxy-spin-0">
+            <option value="1">Prograde</option>
+            <option value="-1">Retrograde</option>
+          </select>
+        </label>
+        <label class="row">
+          Andromeda
+          <select id="galaxy-spin-1">
+            <option value="1">Prograde</option>
+            <option value="-1">Retrograde</option>
+          </select>
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend>Encounter</legend>
+        <label class="row">
+          Orbit
+          <select id="galaxy-encounter">
+            <option value="fast">Fast pass</option>
+            <option value="custom">Custom orbit</option>
+          </select>
+        </label>
+        <label class="row">
+          Closest approach
+          <span><input type="range" id="galaxy-pericenter" /> <output id="galaxy-pericenter-value"></output></span>
+        </label>
+        <label class="row">
+          Eccentricity
+          <span><input type="range" id="galaxy-eccentricity" /> <output id="galaxy-eccentricity-value"></output></span>
+        </label>
+      </fieldset>
+      <label class="row">
+        Stars per galaxy
+        <select id="galaxy-stars"></select>
+      </label>
+      <p id="galaxy-message" role="alert"></p>
+    </div>
     <div id="settings">
       <button id="pause-button" type="button">Pause</button>
       <button id="reset-button" type="button">Reset</button>
+      <button id="galaxy-button" type="button" hidden>Galaxy settings</button>
       <select id="speed-select" title="Simulation speed">
         <option value="0.25">0.25x</option>
         <option value="0.5">0.5x</option>
@@ -24,9 +78,6 @@
       <select id="universe-select">
         <option value="solar-system">Solar System</option>
         <option value="galaxy-collision">Galaxy Collision</option>
-        <option value="galaxy-collision-halo">Galaxy Collision + Halo</option>
-        <option value="galaxy-collision-realistic">Galaxy Collision + Halo + Bulge + Friction</option>
-        <option value="galaxy-collision-retrograde">Galaxy Collision, Retrograde Disks + Friction</option>
         <option value="n-body-universe">N-Body Problem</option>
       </select>
     </div>

@@ -46,3 +46,67 @@ body {
   font: inherit;
   cursor: pointer;
 }
+
+#galaxy-panel {
+  position: fixed;
+  top: 0px;
+  right: 0px;
+  width: 330px;
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.7);
+  color: black;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+#galaxy-panel[hidden] {
+  display: none;
+}
+
+#galaxy-panel h2 {
+  margin: 0 0 6px 0;
+  font-size: 1.1em;
+}
+
+#galaxy-panel fieldset {
+  margin: 6px 0;
+  padding: 4px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+#galaxy-panel label {
+  display: block;
+  margin: 3px 0;
+}
+
+#galaxy-panel .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+#galaxy-panel input[type="range"] {
+  width: 90px;
+  vertical-align: middle;
+}
+
+#galaxy-panel output {
+  display: inline-block;
+  min-width: 4.5em;
+  text-align: right;
+}
+
+#galaxy-panel [disabled],
+#galaxy-panel label:has([disabled]) {
+  opacity: 0.5;
+}
+
+#galaxy-message {
+  min-height: 1.2em;
+  margin: 6px 0 0 0;
+  color: #a00;
+}
