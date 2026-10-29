@@ -297,7 +297,9 @@ function do_stats(now: number): void {
 
   // share of the wall-clock time spent computing forces
   const load = Math.round((currentUniverse.stats.force_time / elapsed) * 100) + "%<br>";
-  const energy_drift = (currentUniverse.total_energy() - initial_energy) / (Math.abs(initial_energy) || 1);
+  // energy removed on purpose by dynamical friction is not an error, so it is added back
+  const energy = currentUniverse.total_energy() + currentUniverse.stats.dissipated_energy;
+  const energy_drift = (energy - initial_energy) / (Math.abs(initial_energy) || 1);
   statsbox.innerHTML = fpsStr + "<br>" + time + "<br>Load: " + load + "dE/E: " + energy_drift.toExponential(1);
 
   // Reset force_time accumulator

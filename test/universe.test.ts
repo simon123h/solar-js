@@ -756,6 +756,28 @@ describe("Universe", () => {
       expect(massless.body.ay).toBeLessThan(reference.body.ay);
     });
 
+    it("should account for the energy it removes, so that the rest can still be checked", () => {
+      const { universe } = createScene(true);
+      universe.physics.dt = 60 * 60 * 3;
+      const energy_before = universe.total_energy();
+      expect(universe.stats.dissipated_energy).toBe(0);
+
+      // updating the forces alone does not dissipate anything: only a time step does
+      universe.update_forces();
+      expect(universe.stats.dissipated_energy).toBe(0);
+
+      for (let i = 0; i < 3000; i++) universe.integration_step();
+      const lost = energy_before - universe.total_energy();
+      expect(universe.stats.dissipated_energy).toBeGreaterThan(0);
+      // the energy that was lost is the energy that was counted as dissipated, up to the integration error
+      expect(Math.abs(universe.stats.dissipated_energy - lost) / lost).toBeLessThan(0.1);
+
+      const without = createScene(false);
+      without.universe.physics.dt = universe.physics.dt;
+      for (let i = 0; i < 3000; i++) without.universe.integration_step();
+      expect(without.universe.stats.dissipated_energy).toBe(0);
+    });
+
     it("should dissipate energy and relative speed while conserving momentum", () => {
       const { universe, center, body } = createScene(true);
       universe.physics.dt = 60 * 60 * 3;

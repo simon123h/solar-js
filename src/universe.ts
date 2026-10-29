@@ -96,6 +96,8 @@ interface ForceBuffers {
 
 interface Stats {
   force_time: number;
+  /** The mechanical energy removed by dynamical friction so far, in joules. */
+  dissipated_energy: number;
 }
 
 /**
@@ -110,6 +112,8 @@ export class Universe {
   stats: Stats;
   /** Source of randomness for scene setup; replace it with a seeded generator for reproducible scenes. */
   random: () => number = Math.random;
+  /** The rate at which dynamical friction removes energy, as of the last force update, in watts. */
+  private friction_power = 0;
   private force_buffers: ForceBuffers | null = null;
 
   /**
@@ -129,6 +133,7 @@ export class Universe {
     };
     this.stats = {
       force_time: 0,
+      dissipated_energy: 0,
     };
   }
 
@@ -321,6 +326,8 @@ export class Universe {
       ay[i] -= (deceleration * vy) / speed;
       reaction_x += (planet.mass * deceleration * vx) / speed;
       reaction_y += (planet.mass * deceleration * vy) / speed;
+      // the force on the planet and the opposite one on the center together remove this much power
+      this.friction_power += planet.mass * deceleration * speed;
     }
     if (center.mass > 0) {
       ax[center_index] += reaction_x / center.mass;
@@ -352,6 +359,7 @@ export class Universe {
    */
   update_forces(): void {
     const start = performance.now();
+    this.friction_power = 0;
     const G = this.physics.G;
     const eps2 = this.physics.softening * this.physics.softening;
 
@@ -487,6 +495,7 @@ export class Universe {
 
     // kick: full velocity step with the acceleration at the midpoint
     this.update_forces();
+    this.stats.dissipated_energy += this.friction_power * dt;
     for (const p of this.planets) {
       p.vx += dt * p.ax;
       p.vy += dt * p.ay;
