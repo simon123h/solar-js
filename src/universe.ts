@@ -1,4 +1,5 @@
 import { Planet } from "./planet";
+import { Units } from "./units";
 
 export interface PlanetSpec {
   name: string;
@@ -79,6 +80,8 @@ interface Stats {
 export class Universe {
   planets: Planet[];
   halos: Halo[];
+  /** Real-world units for the readouts, if the scene's quantities stand for other scales. */
+  units: Units | null = null;
   physics: PhysicsConfig;
   stats: Stats;
   /** Source of randomness for scene setup; replace it with a seeded generator for reproducible scenes. */

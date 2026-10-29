@@ -3,6 +3,7 @@ import createSolarSystem from "../src/universes/solar-system";
 import createGalaxyCollision, {
   GALAXY_BULGE_RADIUS,
   GALAXY_HALO,
+  GALAXY_UNITS,
   add_velocity_dispersion,
   spiral_angle,
 } from "../src/universes/galaxy-collision";
@@ -87,6 +88,32 @@ describe("Universe Factories", () => {
       const prograde = radii([1, 1]);
       expect(reversed).toHaveLength(prograde.length);
       reversed.forEach((r, i) => expect(r / prograde[i]).toBeCloseTo(1, 12));
+    });
+  });
+
+  describe("units", () => {
+    it("should show the galaxy collision in kpc and Myr, and the other scenes in days", () => {
+      expect(createGalaxyCollision().units).toBe(GALAXY_UNITS);
+      expect(createSolarSystem().units).toBeNull();
+      expect(createNBodyUniverse().units).toBeNull();
+    });
+
+    it("should map the halo's flat rotation speed to the Milky Way's 220 km/s", () => {
+      // 1 km/s is 1.0227e-3 kpc per Myr
+      const kpc_per_myr = (GALAXY_HALO.v0 * GALAXY_UNITS.seconds_per_time_unit) / GALAXY_UNITS.meters_per_length_unit;
+      expect(kpc_per_myr / 1.0227e-3).toBeCloseTo(220, 0);
+    });
+
+    it("should put the disks at galactic sizes and the encounter at a few hundred Myr", () => {
+      const universe = createGalaxyCollision(seeded_random(1));
+      const [mw, ag] = universe.planets;
+      const kpc = (meters: number) => meters / GALAXY_UNITS.meters_per_length_unit;
+      expect(kpc(1.2e11)).toBeCloseTo(12, 9);
+      expect(kpc(Math.hypot(ag.x - mw.x, ag.y - mw.y))).toBeCloseTo(60, 9);
+      // the first close approach happens after about 160 simulated days
+      const myr = (160 * 86400) / GALAXY_UNITS.seconds_per_time_unit;
+      expect(myr).toBeGreaterThan(200);
+      expect(myr).toBeLessThan(400);
     });
   });
 

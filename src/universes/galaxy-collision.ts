@@ -1,5 +1,6 @@
 import { Planet } from "../planet";
 import { HaloSpec, PlanetSpec, Universe } from "../universe";
+import { Units } from "../units";
 
 /** Number of spiral arms of each galaxy. */
 const ARMS = 2;
@@ -60,6 +61,28 @@ export const GALAXY_HALO: HaloSpec = {
  */
 export const GALAXY_BULGE_RADIUS = 3e10;
 
+const METERS_PER_KPC = 3.0857e19;
+const SECONDS_PER_MYR = 3.15576e13;
+
+/**
+ * The real-world scale the galaxy collision stands for. The scene is calibrated by two choices: the disks
+ * are about 12 kpc in radius (10^10 simulated meters per kpc), and the halo's flat rotation speed of 45 km/s
+ * stands for a real galaxy's 220 km/s. A length scale and a speed scale fix the time scale, so a simulated
+ * 14 hours is 1 Myr and the whole encounter takes a few hundred Myr, as real ones do.
+ */
+export const GALAXY_UNITS: Units = (() => {
+  const meters_per_kpc = 1e10;
+  const length_factor = METERS_PER_KPC / meters_per_kpc;
+  const speed_factor = 220e3 / GALAXY_HALO.v0;
+  const time_factor = length_factor / speed_factor;
+  return {
+    time_unit: "Myr",
+    seconds_per_time_unit: SECONDS_PER_MYR / time_factor,
+    length_unit: "kpc",
+    meters_per_length_unit: meters_per_kpc,
+  };
+})();
+
 /** Optional features of the galaxy collision. */
 export interface GalaxyOptions {
   /** If given, both galaxies get a dark matter halo with these parameters; none by default. */
@@ -86,6 +109,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
   const { halo = null, bulge_radius = 0, dispersion = 0.1, spins = [1, 1] } = options;
   const universe = new Universe();
   universe.random = random;
+  universe.units = GALAXY_UNITS;
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e9;
   // Softening acts as the core size of each galaxy (together with the bulge radius, if there is one).
