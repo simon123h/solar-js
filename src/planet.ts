@@ -13,6 +13,8 @@ export class Planet {
   ax: number = 0;
   ay: number = 0;
   is_dummy: boolean = false;
+  /** Plummer scale length in meters of the planet's own mass distribution; 0 for a point mass. */
+  core_radius: number = 0;
   trace: Array<[number, number, number]> | null = null;
   shadow: number | null = null;
 

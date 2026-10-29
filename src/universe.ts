@@ -11,6 +11,7 @@ export interface PlanetSpec {
   vy?: number;
   shadow?: number;
   is_dummy?: boolean;
+  core_radius?: number;
 }
 
 interface PhysicsConfig {
@@ -63,6 +64,7 @@ interface ForceBuffers {
   x: Float64Array;
   y: Float64Array;
   gm: Float64Array;
+  soft2: Float64Array;
   ax: Float64Array;
   ay: Float64Array;
 }
@@ -118,6 +120,7 @@ export class Universe {
       planet.vy = p.vy ?? planet.vy;
       planet.shadow = p.shadow ?? planet.shadow;
       planet.is_dummy = p.is_dummy ?? planet.is_dummy;
+      planet.core_radius = p.core_radius ?? planet.core_radius;
       created.push(planet);
     }
     this.planets.push(...created);
@@ -215,11 +218,13 @@ export class Universe {
     planet.y = centerOfMass.y + orbit_radius * Math.sin(angle);
 
     // compute the velocity from the equality of (softened) gravitational and centripetal forces
-    const eps2 = this.physics.softening * this.physics.softening;
+    const attractors = Array.isArray(attractor) ? attractor : [attractor];
+    let attractor_core2 = 0;
+    for (const a of attractors) attractor_core2 += (a.mass * a.core_radius * a.core_radius) / centerOfMass.mass;
+    const eps2 = this.physics.softening * this.physics.softening + planet.core_radius * planet.core_radius + attractor_core2;
     const r2 = orbit_radius * orbit_radius;
     let centripetal = (this.physics.G * centerOfMass.mass * r2) / Math.pow(r2 + eps2, 1.5);
     // halos around the attractor(s) pull the planet inwards as well
-    const attractors = Array.isArray(attractor) ? attractor : [attractor];
     for (const halo of this.halos) {
       if (attractors.includes(halo.center)) centripetal += halo_acceleration_factor(halo, r2) * r2;
     }
@@ -242,6 +247,7 @@ export class Universe {
         x: f64(),
         y: f64(),
         gm: f64(),
+        soft2: f64(),
         ax: f64(),
         ay: f64(),
       };
@@ -266,12 +272,14 @@ export class Universe {
     let k = ndl;
     for (const p of this.planets) if (p.is_dummy) order[k++] = p;
 
-    const { x, y, gm, ax, ay } = b;
+    const { x, y, gm, soft2, ax, ay } = b;
     for (let i = 0; i < n; i++) {
       const p = order[i];
       x[i] = p.x;
       y[i] = p.y;
       gm[i] = G * p.mass;
+      // half of the global softening per body, so the pair sum is the global softening plus both cores
+      soft2[i] = 0.5 * eps2 + p.core_radius * p.core_radius;
       ax[i] = ay[i] = 0;
     }
 
@@ -287,7 +295,7 @@ export class Universe {
         const dy = y[j] - yi;
 
         // softened squared distance, so close encounters stay finite
-        const d2 = dx * dx + dy * dy + eps2;
+        const d2 = dx * dx + dy * dy + soft2[i] + soft2[j];
 
         // gravitational acceleration for both planets
         const f = 1 / (d2 * Math.sqrt(d2));
@@ -351,7 +359,8 @@ export class Universe {
         if (p1.is_dummy && p2.is_dummy) continue;
         const dx = p2.x - p1.x;
         const dy = p2.y - p1.y;
-        energy -= (G * p1.mass * p2.mass) / Math.sqrt(dx * dx + dy * dy + eps2);
+        const softening2 = eps2 + p1.core_radius * p1.core_radius + p2.core_radius * p2.core_radius;
+        energy -= (G * p1.mass * p2.mass) / Math.sqrt(dx * dx + dy * dy + softening2);
       }
     }
     for (const halo of this.halos) {

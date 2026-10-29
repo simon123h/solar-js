@@ -483,6 +483,83 @@ describe("Universe", () => {
     });
   });
 
+  describe("core radius", () => {
+    it("should default to a point mass and be copied from the spec", () => {
+      const universe = new Universe();
+      const [point, bulge] = universe.generate_planets([
+        { name: "Point", mass: 1e30, radius: 1 },
+        { name: "Bulge", mass: 1e30, radius: 1, core_radius: 4e10 },
+      ]);
+      expect(point.core_radius).toBe(0);
+      expect(bulge.core_radius).toBe(4e10);
+    });
+
+    it("should soften the force with the core radii of both bodies", () => {
+      const universe = new Universe();
+      universe.physics.softening = 3e9;
+      const [a, b] = universe.generate_planets([
+        { name: "A", mass: 2e30, radius: 1, core_radius: 4e10 },
+        { name: "B", mass: 1e30, radius: 1, x: 5e10, core_radius: 3e10 },
+      ]);
+      universe.update_forces();
+      const softening2 = 3e9 ** 2 + 4e10 ** 2 + 3e10 ** 2;
+      const d2 = 5e10 ** 2 + softening2;
+      expect(b.ax / ((-universe.physics.G * 2e30 * 5e10) / d2 ** 1.5)).toBeCloseTo(1, 12);
+      expect(a.ax / ((universe.physics.G * 1e30 * 5e10) / d2 ** 1.5)).toBeCloseTo(1, 12);
+    });
+
+    it("should pull much more weakly inside the core than a point mass would", () => {
+      const pull = (core_radius: number) => {
+        const universe = new Universe();
+        universe.generate_planets([
+          { name: "Sun", mass: 1e30, radius: 1, core_radius },
+          { name: "P", mass: 1, radius: 1, x: 1e9 },
+        ]);
+        universe.update_forces();
+        return Math.abs(universe.planets[1].ax);
+      };
+      expect(pull(5e10)).toBeLessThan(pull(0) / 1e3);
+    });
+
+    it("should circularize orbits with the cored force", () => {
+      const universe = new Universe();
+      const [sun, p] = universe.generate_planets([
+        { name: "Sun", mass: 2e30, radius: 1, core_radius: 4e10 },
+        { name: "P", mass: 1, radius: 1, core_radius: 1e10 },
+      ]);
+      universe.circularize(p, 6e10, sun);
+      universe.update_forces();
+      expect((p.v * p.v) / 6e10).toBeCloseTo(Math.hypot(p.ax, p.ay), 12);
+      // a mass-weighted core for several attractors
+      const [a, b] = universe.generate_planets([
+        { name: "A", mass: 1e30, radius: 1, x: -1e10, core_radius: 4e10 },
+        { name: "B", mass: 1e30, radius: 1, x: 1e10, core_radius: 0 },
+      ]);
+      universe.circularize(p, 6e10, [a, b]);
+      expect(Number.isFinite(p.v)).toBe(true);
+    });
+
+    it("should include the cores in the potential energy and conserve energy through a bulge", () => {
+      const universe = new Universe();
+      universe.physics.dt = 60 * 60 * 3;
+      const [sun, p] = universe.generate_planets([
+        { name: "Sun", mass: 2e30, radius: 1, core_radius: 4e10 },
+        { name: "P", mass: 1e24, radius: 1 },
+      ]);
+      universe.circularize(p, 3e10, sun);
+      const initial_energy = universe.total_energy();
+      const potential = -(universe.physics.G * 2e30 * 1e24) / Math.sqrt(9e20 + 1e12 + 1.6e21);
+      expect(initial_energy - p.E_kin() - sun.E_kin()).toBeCloseTo(potential, -25);
+
+      for (let i = 0; i < 4000; i++) {
+        universe.integration_step();
+        expect(Math.abs((universe.total_energy() - initial_energy) / initial_energy)).toBeLessThan(1e-8);
+      }
+      // the orbit stays circular inside the bulge
+      expect(Math.abs(Math.hypot(p.x - sun.x, p.y - sun.y) / 3e10 - 1)).toBeLessThan(1e-3);
+    });
+  });
+
   describe("softening", () => {
     it("should keep forces finite when planets coincide", () => {
       const universe = new Universe();
