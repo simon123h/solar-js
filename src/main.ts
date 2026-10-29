@@ -12,6 +12,8 @@ const universeFactories: Record<string, UniverseFactory> = {
   "galaxy-collision": createGalaxyCollision,
   "galaxy-collision-halo": () => createGalaxyCollision(Math.random, { halo: GALAXY_HALO }),
   "galaxy-collision-realistic": () => createGalaxyCollision(Math.random, { halo: GALAXY_HALO, bulge_radius: GALAXY_BULGE_RADIUS }),
+  "galaxy-collision-retrograde": () =>
+    createGalaxyCollision(Math.random, { halo: GALAXY_HALO, bulge_radius: GALAXY_BULGE_RADIUS, spins: [-1, -1] }),
   "n-body-universe": createNBodyUniverse,
 };
 

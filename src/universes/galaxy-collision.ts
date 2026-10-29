@@ -18,13 +18,15 @@ const ARM_SPREAD = 0.3;
  * The arms trail behind the direction of rotation, like in real spiral galaxies.
  * @param radius - The orbit radius of the star.
  * @param random - Source of randomness.
+ * @param spin - The direction of rotation: 1 (the default) is counter-clockwise on screen, -1 is clockwise.
  * @returns The angle in radians.
  */
-export function spiral_angle(radius: number, random: () => number): number {
+export function spiral_angle(radius: number, random: () => number, spin: number = 1): number {
   const arm = Math.floor(random() * ARMS);
   // the sum of three uniform numbers is roughly bell-shaped, with a standard deviation of 0.5
   const scatter = random() + random() + random() - 1.5;
-  return (arm * 2 * Math.PI) / ARMS + WINDING * Math.log(radius / INNER_RADIUS) + 2 * ARM_SPREAD * scatter;
+  // rotating the other way mirrors the arms, so they still trail
+  return (arm * 2 * Math.PI) / ARMS + spin * WINDING * Math.log(radius / INNER_RADIUS) + 2 * ARM_SPREAD * scatter;
 }
 
 /**
@@ -66,6 +68,12 @@ export interface GalaxyOptions {
   bulge_radius?: number;
   /** The random velocity of the stars as a fraction of their orbital speed; 0.1 by default. */
   dispersion?: number;
+  /**
+   * The direction in which the Milky Way and the Andromeda Galaxy rotate: 1 is counter-clockwise on screen,
+   * -1 clockwise. The galaxies approach each other counter-clockwise, so 1 is prograde (spin along the
+   * orbit, which gives strong tidal tails) and -1 retrograde. Both are prograde by default.
+   */
+  spins?: [number, number];
 }
 
 /**
@@ -75,7 +83,7 @@ export interface GalaxyOptions {
  * @returns The created Universe instance configured with two colliding galaxies.
  */
 export default function createGalaxyCollision(random: () => number = Math.random, options: GalaxyOptions = {}): Universe {
-  const { halo = null, bulge_radius = 0, dispersion = 0.1 } = options;
+  const { halo = null, bulge_radius = 0, dispersion = 0.1, spins = [1, 1] } = options;
   const universe = new Universe();
   universe.random = random;
   universe.physics.G = 6.674e-11;
@@ -120,9 +128,9 @@ export default function createGalaxyCollision(random: () => number = Math.random
   }
 
   /** Adds a star on an orbit inside a spiral arm of the galaxy, with some random motion. */
-  const add_star = (spec: PlanetSpec, radius: number, galaxy: Planet): void => {
+  const add_star = (spec: PlanetSpec, radius: number, galaxy: Planet, spin: number): void => {
     const star = universe.generate_planets([spec])[0];
-    universe.circularize(star, radius, galaxy, 1, spiral_angle(radius, universe.random));
+    universe.circularize(star, radius, galaxy, spin, spiral_angle(radius, universe.random, spin));
     add_velocity_dispersion(star, galaxy, dispersion, universe.random);
   };
 
@@ -138,7 +146,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
       is_dummy: !is_earth,
     };
     const radius = 1e11 * (0.2 + universe.random());
-    add_star(planet, radius, mw);
+    add_star(planet, radius, mw, spins[0]);
   }
 
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
@@ -151,7 +159,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
       is_dummy: true,
     };
     const radius = 1e11 * (0.2 + universe.random());
-    add_star(planet, radius, ag);
+    add_star(planet, radius, ag, spins[1]);
   }
 
   return universe;

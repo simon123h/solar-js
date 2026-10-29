@@ -43,6 +43,53 @@ describe("Universe Factories", () => {
     expect(core_crossing_time).toBeGreaterThan(universe.physics.dt * 2);
   });
 
+  describe("spin direction", () => {
+    /** The total angular momentum of a galaxy's stars around it, in the z direction (negative: counter-clockwise on screen). */
+    function spin_of(universe: Universe, galaxy: "Milky Way" | "Andromeda Galaxy"): number {
+      const center = universe.get_planet_by_name(galaxy)!;
+      const prefix = galaxy === "Milky Way" ? "MW" : "AG";
+      return universe.planets
+        .filter((p) => p.name.startsWith(prefix))
+        .reduce((sum, p) => sum + (p.x - center.x) * (p.vy - center.vy) - (p.y - center.y) * (p.vx - center.vx), 0);
+    }
+
+    /** The angular momentum of the two galaxies' relative orbit. */
+    function orbit_of(universe: Universe): number {
+      const [mw, ag] = universe.planets;
+      return (ag.x - mw.x) * (ag.vy - mw.vy) - (ag.y - mw.y) * (ag.vx - mw.vx);
+    }
+
+    it("should make both galaxies prograde by default", () => {
+      const universe = createGalaxyCollision(seeded_random(1));
+      expect(Math.sign(spin_of(universe, "Milky Way"))).toBe(Math.sign(orbit_of(universe)));
+      expect(Math.sign(spin_of(universe, "Andromeda Galaxy"))).toBe(Math.sign(orbit_of(universe)));
+    });
+
+    it("should reverse the rotation of a single galaxy", () => {
+      const universe = createGalaxyCollision(seeded_random(1), { spins: [1, -1] });
+      expect(Math.sign(spin_of(universe, "Milky Way"))).toBe(Math.sign(orbit_of(universe)));
+      expect(Math.sign(spin_of(universe, "Andromeda Galaxy"))).toBe(-Math.sign(orbit_of(universe)));
+    });
+
+    it("should reverse both galaxies", () => {
+      const universe = createGalaxyCollision(seeded_random(1), { spins: [-1, -1] });
+      expect(Math.sign(spin_of(universe, "Milky Way"))).toBe(-Math.sign(orbit_of(universe)));
+      expect(Math.sign(spin_of(universe, "Andromeda Galaxy"))).toBe(-Math.sign(orbit_of(universe)));
+    });
+
+    it("should not change the orbit radii of the stars", () => {
+      const radii = (spins: [number, number]) => {
+        const universe = createGalaxyCollision(seeded_random(7), { spins });
+        const [mw] = universe.planets;
+        return universe.planets.filter((p) => p.name.startsWith("MW")).map((p) => Math.hypot(p.x - mw.x, p.y - mw.y));
+      };
+      const reversed = radii([-1, 1]);
+      const prograde = radii([1, 1]);
+      expect(reversed).toHaveLength(prograde.length);
+      reversed.forEach((r, i) => expect(r / prograde[i]).toBeCloseTo(1, 12));
+    });
+  });
+
   describe("velocity dispersion", () => {
     /**
      * The velocity of every Milky Way star relative to its galaxy, split into radial and tangential parts.
@@ -102,13 +149,18 @@ describe("Universe Factories", () => {
      * Phase coherence of the stars around a center: 0 for a uniform disk, 1 if all stars lie exactly on
      * the arms. Each star's angle is corrected by the arm's winding, then folded onto one arm period.
      */
-    function arm_coherence(bodies: { x: number; y: number }[], center: { x: number; y: number }, arms: number): number {
+    function arm_coherence(
+      bodies: { x: number; y: number }[],
+      center: { x: number; y: number },
+      arms: number,
+      winding: number = 2.75,
+    ): number {
       let re = 0;
       let im = 0;
       for (const b of bodies) {
         const radius = Math.hypot(b.x - center.x, b.y - center.y);
         const angle = Math.atan2(b.y - center.y, b.x - center.x);
-        const phase = arms * (angle - 2.75 * Math.log(radius / 0.2e11));
+        const phase = arms * (angle - winding * Math.log(radius / 0.2e11));
         re += Math.cos(phase);
         im += Math.sin(phase);
       }
@@ -138,6 +190,25 @@ describe("Universe Factories", () => {
       for (const a of angles) per_arm[Math.round((a - offset) / Math.PI) % 2 === 0 ? 0 : 1]++;
       expect(per_arm[0]).toBeGreaterThan(800);
       expect(per_arm[1]).toBeGreaterThan(800);
+    });
+
+    it("should mirror the arms of a galaxy that rotates the other way", () => {
+      const fixed = () => 0.5;
+      // with this random source the arm offset is pi and there is no scatter
+      for (const radius of [0.3e11, 0.7e11, 1.1e11]) {
+        expect(spiral_angle(radius, fixed, -1) - Math.PI).toBeCloseTo(-(spiral_angle(radius, fixed, 1) - Math.PI), 12);
+      }
+      // still trailing: against the direction of rotation, the angle now decreases outwards
+      expect(spiral_angle(1e11, fixed, -1)).toBeLessThan(spiral_angle(0.5e11, fixed, -1));
+    });
+
+    it("should trail the arms of a clockwise galaxy in the mirrored spiral", () => {
+      const universe = createGalaxyCollision(seeded_random(3), { spins: [1, -1] });
+      const [mw, ag] = universe.planets;
+      const stars = (prefix: string) => universe.planets.filter((p) => p.name.startsWith(prefix));
+      expect(arm_coherence(stars("MW"), mw, 2)).toBeGreaterThan(0.6);
+      expect(arm_coherence(stars("AG"), ag, 2, -2.75)).toBeGreaterThan(0.6);
+      expect(arm_coherence(stars("AG"), ag, 2, 2.75)).toBeLessThan(0.3);
     });
 
     it("should trail the arms: the angle increases outwards, against the direction of rotation", () => {
