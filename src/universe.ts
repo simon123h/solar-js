@@ -37,6 +37,9 @@ export interface Halo {
   truncation_radius: number;
 }
 
+/** The parameters of a halo, without the planet it is centered on. */
+export type HaloSpec = Omit<Halo, "center">;
+
 /**
  * The halo's acceleration towards its center divided by the distance, at squared distance d2.
  */

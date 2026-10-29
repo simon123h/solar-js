@@ -1,4 +1,4 @@
-import { Universe } from "../universe";
+import { HaloSpec, Universe } from "../universe";
 
 /** Number of spiral arms of each galaxy. */
 const ARMS = 2;
@@ -27,11 +27,22 @@ export function spiral_angle(radius: number, random: () => number): number {
 }
 
 /**
+ * The dark matter halo of each galaxy in the variant with halos. It flattens the rotation curve of the
+ * disk, so the stars orbit at more similar speeds, and keeps the galaxies' encounter close to the original.
+ */
+export const GALAXY_HALO: HaloSpec = {
+  v0: 4.5e4,
+  core_radius: 2e10,
+  truncation_radius: 2e11,
+};
+
+/**
  * Creates a galaxy collision universe.
  * @param random - Source of randomness, e.g. a seeded generator for a reproducible scene.
+ * @param halo - If given, both galaxies get a dark matter halo with these parameters; none by default.
  * @returns The created Universe instance configured with two colliding galaxies.
  */
-export default function createGalaxyCollision(random: () => number = Math.random): Universe {
+export default function createGalaxyCollision(random: () => number = Math.random, halo: HaloSpec | null = null): Universe {
   const universe = new Universe();
   universe.random = random;
   universe.physics.G = 6.674e-11;
@@ -67,6 +78,10 @@ export default function createGalaxyCollision(random: () => number = Math.random
   };
 
   const [mw, ag] = universe.generate_planets([milkyway, andromeda]);
+  if (halo) {
+    // before the stars are placed, so that their orbital speeds include the halo
+    for (const galaxy of [mw, ag]) universe.add_halo(galaxy, halo.v0, halo.core_radius, halo.truncation_radius);
+  }
 
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
     // highlight the earth: the first body of the Milky Way is a full, non-dummy planet

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import createSolarSystem from "../src/universes/solar-system";
-import createGalaxyCollision, { spiral_angle } from "../src/universes/galaxy-collision";
+import createGalaxyCollision, { GALAXY_HALO, spiral_angle } from "../src/universes/galaxy-collision";
 import createNBodyUniverse from "../src/universes/n-body-universe";
 import { seeded_random } from "../src/random";
+import { Universe } from "../src/universe";
 
 describe("Universe Factories", () => {
   it("should create Solar System", () => {
@@ -77,6 +78,46 @@ describe("Universe Factories", () => {
     it("should trail the arms: the angle increases outwards, against the direction of rotation", () => {
       const fixed = () => 0.5;
       expect(spiral_angle(1e11, fixed)).toBeGreaterThan(spiral_angle(0.5e11, fixed));
+    });
+  });
+
+  describe("galaxy collision with halos", () => {
+    /** The mean orbital speed of the Milky Way's stars within a radius band, relative to the galaxy. */
+    function mean_speed(universe: Universe, min_radius: number, max_radius: number): number {
+      const [mw] = universe.planets;
+      const speeds = universe.planets
+        .filter((p) => p.name.startsWith("MW"))
+        .filter((p) => {
+          const r = Math.hypot(p.x - mw.x, p.y - mw.y);
+          return r >= min_radius && r < max_radius;
+        })
+        .map((p) => Math.hypot(p.vx - mw.vx, p.vy - mw.vy));
+      return speeds.reduce((a, b) => a + b, 0) / speeds.length;
+    }
+
+    it("should have no halos unless asked for", () => {
+      expect(createGalaxyCollision().halos).toEqual([]);
+    });
+
+    it("should give both galaxies a halo", () => {
+      const universe = createGalaxyCollision(seeded_random(1), GALAXY_HALO);
+      expect(universe.halos.map((h) => h.center.name)).toEqual(["Milky Way", "Andromeda Galaxy"]);
+      expect(universe.halos.every((h) => h.v0 === GALAXY_HALO.v0)).toBe(true);
+    });
+
+    it("should flatten the rotation curve", () => {
+      const slope = (universe: Universe) => mean_speed(universe, 0.2e11, 0.35e11) / mean_speed(universe, 0.95e11, 1.2e11);
+      const plain = slope(createGalaxyCollision(seeded_random(1)));
+      const with_halo = slope(createGalaxyCollision(seeded_random(1), GALAXY_HALO));
+      // a Keplerian disk is almost twice as fast at its inner edge as at its outer edge
+      expect(plain).toBeGreaterThan(1.7);
+      expect(with_halo).toBeLessThan(1.5);
+      expect(with_halo).toBeGreaterThan(1);
+    });
+
+    it("should place the stars in the same spiral arms with or without halos", () => {
+      const positions = (halo: typeof GALAXY_HALO | null) => createGalaxyCollision(seeded_random(2), halo).planets.map((p) => [p.x, p.y]);
+      expect(positions(GALAXY_HALO)).toEqual(positions(null));
     });
   });
 
