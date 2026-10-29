@@ -129,6 +129,13 @@ export interface GalaxyOptions {
    * orbit, which gives strong tidal tails) and -1 retrograde. Both are prograde by default.
    */
   spins?: [number, number];
+  /**
+   * Whether the galaxies are slowed by dynamical friction as they move through each other's halo, which makes
+   * them lose orbital energy and merge. Needs halos; off by default.
+   */
+  friction?: boolean;
+  /** The number of stars in each galaxy; 3000 by default. */
+  stars?: number;
 }
 
 /**
@@ -138,7 +145,7 @@ export interface GalaxyOptions {
  * @returns The created Universe instance configured with two colliding galaxies.
  */
 export default function createGalaxyCollision(random: () => number = Math.random, options: GalaxyOptions = {}): Universe {
-  const { halo = null, bulge_radius = 0, dispersion = 0.1, spins = [1, 1] } = options;
+  const { halo = null, bulge_radius = 0, dispersion = 0.1, spins = [1, 1], friction = false, stars = 3000 } = options;
   const universe = new Universe();
   universe.random = random;
   universe.units = GALAXY_UNITS;
@@ -151,7 +158,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
   universe.physics.dt = 60 * 60 * 3;
   universe.physics.trace_age = 60 * 60 * 24 * 400;
   universe.physics.substeps = 3;
-  universe.physics.n_asteroids = 3000;
+  universe.physics.n_asteroids = stars;
 
   const milkyway = {
     name: "Milky Way",
@@ -180,7 +187,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
   const [mw, ag] = universe.generate_planets([milkyway, andromeda]);
   if (halo) {
     // before the stars are placed, so that their orbital speeds include the halo
-    for (const galaxy of [mw, ag]) universe.add_halo(galaxy, halo.v0, halo.core_radius, halo.truncation_radius);
+    for (const galaxy of [mw, ag]) universe.add_halo(galaxy, halo.v0, halo.core_radius, halo.truncation_radius, friction);
   }
 
   /** Adds a star on an orbit inside a spiral arm of the galaxy, with some random motion. */

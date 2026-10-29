@@ -49,6 +49,60 @@ describe("Universe Factories", () => {
     expect(core_crossing_time).toBeGreaterThan(universe.physics.dt * 2);
   });
 
+  describe("dynamical friction and the number of stars", () => {
+    const options = { halo: GALAXY_HALO, bulge_radius: GALAXY_BULGE_RADIUS, stars: 0 };
+
+    /** The distance between the two galaxies, sampled every 25 days for the given number of days. */
+    function separations(friction: boolean, days: number): number[] {
+      const universe = createGalaxyCollision(seeded_random(1), { ...options, friction });
+      const [mw, ag] = universe.planets;
+      const result: number[] = [];
+      for (let day = 0; day <= days; day += 25) {
+        while (universe.physics.time < day * 86400 - 1) universe.integration_step();
+        result.push(Math.hypot(mw.x - ag.x, mw.y - ag.y));
+      }
+      return result;
+    }
+
+    it("should create the given number of stars per galaxy", () => {
+      const universe = createGalaxyCollision(seeded_random(1), { stars: 40 });
+      expect(universe.planets.filter((p) => p.name.startsWith("MW") || p.name === "Earth")).toHaveLength(40);
+      expect(universe.planets.filter((p) => p.name.startsWith("AG"))).toHaveLength(40);
+      expect(createGalaxyCollision(seeded_random(1), { stars: 0 }).planets).toHaveLength(2);
+    });
+
+    it("should only enable friction when asked for", () => {
+      expect(createGalaxyCollision(seeded_random(1), { halo: GALAXY_HALO, stars: 0 }).halos.map((h) => h.friction)).toEqual([false, false]);
+      expect(createGalaxyCollision(seeded_random(1), { halo: GALAXY_HALO, stars: 0, friction: true }).halos.map((h) => h.friction)).toEqual(
+        [true, true],
+      );
+    });
+
+    it("should make the galaxies bounce apart without friction, and merge with it", () => {
+      const without = separations(false, 800);
+      const with_friction = separations(true, 800);
+      // after the first close pass the rigid halos let the galaxies swing apart again, and again and again
+      const after_first_pass = without.slice(Math.floor(300 / 25));
+      expect(Math.max(...after_first_pass)).toBeGreaterThan(450e9);
+      // with friction they stay together: no body is ever farther apart than a few kpc again
+      const merged = with_friction.slice(Math.floor(300 / 25));
+      expect(Math.max(...merged)).toBeLessThan(30e9);
+      // before the first pass friction hardly matters
+      expect(with_friction[2] / without[2]).toBeCloseTo(1, 1);
+    });
+
+    it("should account for the energy the friction removed", () => {
+      const universe = createGalaxyCollision(seeded_random(1), { ...options, friction: true });
+      const initial_energy = universe.total_energy();
+      while (universe.physics.time < 600 * 86400) universe.integration_step();
+      const removed = universe.stats.dissipated_energy;
+      expect(removed).toBeGreaterThan(Math.abs(initial_energy));
+      // without the accounting the energy would seem to have collapsed; with it, it has not drifted much
+      expect(Math.abs(universe.total_energy() - initial_energy) / Math.abs(initial_energy)).toBeGreaterThan(5);
+      expect(Math.abs(universe.total_energy() + removed - initial_energy) / Math.abs(initial_energy)).toBeLessThan(0.15);
+    });
+  });
+
   describe("spin direction", () => {
     /** The total angular momentum of a galaxy's stars around it, in the z direction (negative: counter-clockwise on screen). */
     function spin_of(universe: Universe, galaxy: "Milky Way" | "Andromeda Galaxy"): number {
