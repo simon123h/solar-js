@@ -136,6 +136,12 @@ const emit = defineEmits<{
 .select-wrapper {
   display: inline-flex;
   align-items: center;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.select-wrapper:hover {
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 select {
@@ -148,16 +154,14 @@ select {
   font-weight: 500;
   cursor: pointer;
   outline: none;
-  transition: background-color 0.15s ease;
 }
 
 select:hover {
-  background-color: rgba(255, 255, 255, 0.15);
   color: #ffffff;
 }
 
 select option {
-  background-color: #1e293b;
+  background-color: #0f172a;
   color: #e2e8f0;
 }
 
