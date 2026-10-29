@@ -12,6 +12,11 @@ body {
   position: absolute;
   background-color: #000;
   display: block;
+  cursor: grab;
+}
+
+#canvas.dragging {
+  cursor: grabbing;
 }
 
 #app {

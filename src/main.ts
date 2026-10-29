@@ -97,6 +97,17 @@ const _last_stats: StatsState = {
   time: performance.now(),
 };
 
+/** Pan offset in screen pixels. */
+const camera = {
+  x: 0,
+  y: 0,
+  isDragging: false,
+  dragStartX: 0,
+  dragStartY: 0,
+  cameraStartX: 0,
+  cameraStartY: 0,
+};
+
 /**
  * Initializes the application.
  * Sets up event listeners and starts the default simulation.
@@ -146,6 +157,8 @@ function init(): void {
     initialStats: "loading...",
     onChangeUniverse(nextUniverse: string) {
       currentUniverseKey = nextUniverse;
+      camera.x = 0;
+      camera.y = 0;
       change_universe(currentUniverseKey);
       save();
     },
@@ -157,6 +170,8 @@ function init(): void {
       loop.paused = paused;
     },
     onReset() {
+      camera.x = 0;
+      camera.y = 0;
       change_universe(currentUniverseKey);
     },
     onUpdateGalaxy(next: GalaxySettings) {
@@ -220,6 +235,47 @@ function init(): void {
 
   // zoom handler
   window.addEventListener("wheel", zoom_canvas);
+
+  // drag & drop pan handlers
+  setup_drag_and_drop();
+}
+
+/**
+ * Sets up mouse drag & drop spatial panning on the canvas.
+ */
+function setup_drag_and_drop(): void {
+  window.addEventListener("mousedown", (e: MouseEvent) => {
+    // Only primary button, and ignore if clicking on HUD / interactive UI overlay elements
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement | null;
+    if (target && target.closest("#app > *")) return;
+
+    camera.isDragging = true;
+    camera.dragStartX = e.clientX;
+    camera.dragStartY = e.clientY;
+    camera.cameraStartX = camera.x;
+    camera.cameraStartY = camera.y;
+    canvas.classList.add("dragging");
+  });
+
+  window.addEventListener("mousemove", (e: MouseEvent) => {
+    if (!camera.isDragging) return;
+    const dx = e.clientX - camera.dragStartX;
+    const dy = e.clientY - camera.dragStartY;
+    camera.x = camera.cameraStartX + dx;
+    camera.y = camera.cameraStartY + dy;
+    redraw();
+  });
+
+  const stopDrag = () => {
+    if (camera.isDragging) {
+      camera.isDragging = false;
+      canvas.classList.remove("dragging");
+    }
+  };
+
+  window.addEventListener("mouseup", stopDrag);
+  window.addEventListener("blur", stopDrag);
 }
 
 // Ensure DOM is loaded
@@ -303,8 +359,8 @@ function redraw(): void {
       ctx.shadowColor = planet.color;
       ctx.shadowBlur = planet.shadow;
     }
-    let x = width / 2 + planet.x / scale;
-    let y = height / 2 + planet.y / scale;
+    let x = width / 2 + camera.x + planet.x / scale;
+    let y = height / 2 + camera.y + planet.y / scale;
     ctx.beginPath();
     ctx.arc(x, y, planet.radius, 0, 2 * Math.PI);
     ctx.closePath();
@@ -321,8 +377,8 @@ function redraw(): void {
         const alpha = (1 - (currentUniverse.physics.time - t[0]) / currentUniverse.physics.trace_age) / 2;
         // the trace of a highlighted planet is more opaque, so it shows between the stars
         ctx.globalAlpha = planet.highlight ? Math.min(1, 2 * alpha) : alpha;
-        const tx = width / 2 + t[1] / scale;
-        const ty = height / 2 + t[2] / scale;
+        const tx = width / 2 + camera.x + t[1] / scale;
+        const ty = height / 2 + camera.y + t[2] / scale;
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(tx, ty);
@@ -370,8 +426,8 @@ function draw_stars(planets: Planet[], width: number, height: number, scale: num
   let color = "";
   for (const star of planets) {
     if (!star.is_dummy) continue;
-    const x = width / 2 + star.x / scale;
-    const y = height / 2 + star.y / scale;
+    const x = width / 2 + camera.x + star.x / scale;
+    const y = height / 2 + camera.y + star.y / scale;
     const size = 2 * star.radius;
     if (x < -size || x > width || y < -size || y > height) continue;
     if (star.color !== color) {
@@ -464,5 +520,15 @@ function change_universe(universeKey: string): void {
 function zoom_canvas(event: WheelEvent): void {
   if (!currentUniverse) return;
   const zoom_factor = 1 + event.deltaY / 2e4;
+
+  // Zoom centered around the mouse cursor
+  const mouseScreenX = event.clientX - canvas.offsetWidth / 2;
+  const mouseScreenY = event.clientY - canvas.offsetHeight / 2;
+
+  // Shift camera pan so the point under cursor remains stationary
+  camera.x = mouseScreenX - (mouseScreenX - camera.x) / zoom_factor;
+  camera.y = mouseScreenY - (mouseScreenY - camera.y) / zoom_factor;
+
   currentUniverse.physics.length_scale *= zoom_factor;
+  redraw();
 }
