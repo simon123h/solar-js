@@ -153,6 +153,8 @@ export interface GalaxyOptions {
   friction?: boolean;
   /** The number of stars in each galaxy; 3000 by default. */
   stars?: number;
+  /** Number of interacting galaxies: 2 or 3 (default 2). */
+  galaxies?: number;
   /**
    * How the galaxies approach each other, as a first closest approach and an eccentricity. If left out, they
    * start from hand-picked velocities that make a fast, nearly head-on pass.
@@ -163,11 +165,11 @@ export interface GalaxyOptions {
 /**
  * Creates a galaxy collision universe.
  * @param random - Source of randomness, e.g. a seeded generator for a reproducible scene.
- * @param options - Optional features such as dark matter halos.
- * @returns The created Universe instance configured with two colliding galaxies.
+ * @param options - Optional features such as dark matter halos and triple galaxy mode.
+ * @returns The created Universe instance configured with two or three colliding galaxies.
  */
 export default function createGalaxyCollision(random: () => number = Math.random, options: GalaxyOptions = {}): Universe {
-  const { halo = null, bulge_radius = 0, dispersion = 0.1, spins = [1, 1], friction = false, stars = 3000, encounter } = options;
+  const { halo = null, bulge_radius = 0, dispersion = 0.1, spins = [1, 1], friction = false, stars = 3000, galaxies = 2, encounter } = options;
   const universe = new Universe();
   universe.random = random;
   universe.units = GALAXY_UNITS;
@@ -180,8 +182,95 @@ export default function createGalaxyCollision(random: () => number = Math.random
   universe.physics.dt = 60 * 60 * 3;
   universe.physics.trace_age = 60 * 60 * 24 * 400;
   universe.physics.substeps = 3;
-  universe.physics.n_asteroids = stars;
+  universe.physics.n_asteroids = stars * galaxies;
 
+  /** Adds a star on an orbit inside a spiral arm of the galaxy, with some random motion. */
+  const add_star = (spec: PlanetSpec, radius: number, galaxy: Planet, spin: number): void => {
+    const star = universe.generate_planets([spec])[0];
+    universe.circularize(star, radius, galaxy, spin, spiral_angle(radius, universe.random, spin));
+    add_velocity_dispersion(star, galaxy, dispersion, universe.random);
+  };
+
+  if (galaxies === 3) {
+    // Triple galaxy encounter: 3 galaxies placed at 120-degree intervals
+    const separation = 350e9; // 35 kpc from center
+    const infall_speed = 7.5e4; // 75 km/s
+    const tangential_speed = 5.5e4; // 55 km/s
+
+    const specs: { name: string; color: string; starColor: string; mass: number; angle: number; spin: number }[] = [
+      {
+        name: "Milky Way",
+        color: "#6ff",
+        starColor: "#CCF",
+        mass: 3.0e30,
+        angle: Math.PI / 2, // 90° (top)
+        spin: spins[0] ?? 1,
+      },
+      {
+        name: "Andromeda Galaxy",
+        color: "#ff6",
+        starColor: "#FFC",
+        mass: 3.5e30,
+        angle: (Math.PI / 2) + (2 * Math.PI / 3), // 210° (bottom-left)
+        spin: spins[1] ?? 1,
+      },
+      {
+        name: "Triangulum Galaxy",
+        color: "#f472b6", // pink
+        starColor: "#fbcfe8",
+        mass: 2.5e30,
+        angle: (Math.PI / 2) + (4 * Math.PI / 3), // 330° (bottom-right)
+        spin: -1, // retrograde for chaotic tidal bridges
+      },
+    ];
+
+    const cores = universe.generate_planets(
+      specs.map((s) => ({
+        name: s.name,
+        core_radius: bulge_radius,
+        color: s.color,
+        mass: s.mass,
+        radius: 5,
+        x: separation * Math.cos(s.angle),
+        y: separation * Math.sin(s.angle),
+        vx: -infall_speed * Math.cos(s.angle) - tangential_speed * Math.sin(s.angle),
+        vy: -infall_speed * Math.sin(s.angle) + tangential_speed * Math.cos(s.angle),
+        highlight: true,
+        shadow: 8,
+      }))
+    );
+
+    if (halo) {
+      for (const core of cores) {
+        universe.add_halo(core, halo.v0, halo.core_radius, halo.truncation_radius, friction);
+      }
+    }
+
+    for (let g = 0; g < cores.length; g++) {
+      const core = cores[g];
+      const spec = specs[g];
+      for (let n = 0; n < stars; n++) {
+        const is_earth = g === 0 && n === 0;
+        const planetSpec: PlanetSpec = {
+          name: is_earth ? "Earth" : `${spec.name.slice(0, 2)}${n}`,
+          color: is_earth ? EARTH_COLOR : spec.starColor,
+          mass: 1e15,
+          radius: is_earth ? 3 : 1,
+          highlight: is_earth,
+          shadow: is_earth ? 8 : undefined,
+          is_dummy: !is_earth,
+        };
+        const radius = is_earth
+          ? EARTH_ORBIT_RADIUS
+          : exponential_disk_radius(universe.random, DISK_SCALE_LENGTH, DISK_MIN_RADIUS, DISK_MAX_RADIUS);
+        add_star(planetSpec, radius, core, spec.spin);
+      }
+    }
+
+    return universe;
+  }
+
+  // 2-galaxy encounter (default)
   const milkyway = {
     name: "Milky Way",
     core_radius: bulge_radius,
@@ -214,14 +303,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
 
   if (encounter) place_encounter(universe, mw, ag, encounter);
 
-  /** Adds a star on an orbit inside a spiral arm of the galaxy, with some random motion. */
-  const add_star = (spec: PlanetSpec, radius: number, galaxy: Planet, spin: number): void => {
-    const star = universe.generate_planets([spec])[0];
-    universe.circularize(star, radius, galaxy, spin, spiral_angle(radius, universe.random, spin));
-    add_velocity_dispersion(star, galaxy, dispersion, universe.random);
-  };
-
-  for (let n = 0; n < universe.physics.n_asteroids!; n++) {
+  for (let n = 0; n < stars; n++) {
     // the first body of the Milky Way is the Earth: a full, non-dummy planet that is highlighted in the picture
     const is_earth = n === 0;
     const planet = {
@@ -240,7 +322,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
     add_star(planet, radius, mw, spins[0]);
   }
 
-  for (let n = 0; n < universe.physics.n_asteroids!; n++) {
+  for (let n = 0; n < stars; n++) {
     const planet = {
       name: "AG" + n,
       color: "#FFC",

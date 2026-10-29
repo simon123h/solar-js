@@ -56,6 +56,14 @@ function updateSpin(index: 0 | 1, value: number) {
       </select>
     </label>
 
+    <label class="row">
+      <span>Galaxies</span>
+      <select :value="modelValue.galaxies ?? 2" @change="update('galaxies', Number(($event.target as HTMLSelectElement).value))">
+        <option :value="2">2 (Pair collision)</option>
+        <option :value="3">3 (Triple collision)</option>
+      </select>
+    </label>
+
     <fieldset>
       <legend>Physics</legend>
       <label>
@@ -103,7 +111,7 @@ function updateSpin(index: 0 | 1, value: number) {
       </label>
     </fieldset>
 
-    <fieldset>
+    <fieldset v-if="modelValue.galaxies !== 3">
       <legend>Encounter</legend>
       <label class="row">
         <span>Orbit</span>

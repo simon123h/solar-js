@@ -86,6 +86,7 @@ describe("matching_preset", () => {
 describe("galaxy_options", () => {
   it("should leave out everything that is switched off", () => {
     expect(galaxy_options(DEFAULT_GALAXY_SETTINGS)).toEqual({
+      galaxies: 2,
       halo: null,
       bulge_radius: 0,
       friction: false,
@@ -135,6 +136,7 @@ describe("normalize_galaxy_settings", () => {
       stars: 12.5,
     };
     expect(normalize_galaxy_settings(saved)).toEqual({
+      galaxies: 2,
       halo: false,
       bulge: true,
       friction: false,

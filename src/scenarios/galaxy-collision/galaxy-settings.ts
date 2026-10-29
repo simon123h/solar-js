@@ -3,7 +3,9 @@ import { GALAXY_BULGE_RADIUS, GALAXY_ENCOUNTER, GALAXY_HALO, GALAXY_UNITS, Galax
 
 /** What the user can change about the galaxy collision. */
 export interface GalaxySettings {
-  /** Whether both galaxies have a dark matter halo. */
+  /** Number of interacting galaxies: 2 or 3. */
+  galaxies: number;
+  /** Whether both/all galaxies have a dark matter halo. */
   halo: boolean;
   /** Whether the galaxies have an extended bulge instead of a point mass in the middle. */
   bulge: boolean;
@@ -33,6 +35,7 @@ const MERGER_PERICENTER_KPC = GALAXY_ENCOUNTER.pericenter / GALAXY_UNITS.meters_
 
 /** The scene as it started out: two plain disks on a fast pass. */
 export const DEFAULT_GALAXY_SETTINGS: GalaxySettings = {
+  galaxies: 2,
   halo: false,
   bulge: false,
   friction: false,
@@ -58,12 +61,22 @@ const MERGER: GalaxySettings = {
   custom_encounter: true,
 };
 
+const TRIPLE_MERGER: GalaxySettings = {
+  ...DEFAULT_GALAXY_SETTINGS,
+  galaxies: 3,
+  halo: true,
+  bulge: true,
+  friction: true,
+  stars: 1500,
+};
+
 /** The variations of the galaxy collision that used to be separate scenarios. */
 export const GALAXY_PRESETS: GalaxyPreset[] = [
-  { id: "classic", label: "Plain disks, fast pass", settings: DEFAULT_GALAXY_SETTINGS },
-  { id: "halo", label: "With dark matter halos", settings: { ...DEFAULT_GALAXY_SETTINGS, halo: true } },
-  { id: "merger", label: "Merger with halos and friction", settings: MERGER },
-  { id: "retrograde", label: "Merger, retrograde disks", settings: { ...MERGER, spins: [-1, -1] } },
+  { id: "classic", label: "Plain disks, fast pass (2)", settings: DEFAULT_GALAXY_SETTINGS },
+  { id: "halo", label: "With dark matter halos (2)", settings: { ...DEFAULT_GALAXY_SETTINGS, halo: true } },
+  { id: "merger", label: "Merger with halos and friction (2)", settings: MERGER },
+  { id: "retrograde", label: "Merger, retrograde disks (2)", settings: { ...MERGER, spins: [-1, -1] } },
+  { id: "triple-merger", label: "Triple galaxy collision (3)", settings: TRIPLE_MERGER },
 ];
 
 /**
@@ -82,6 +95,7 @@ export const LEGACY_GALAXY_UNIVERSES: Record<string, GalaxySettings> = {
 function canonical(settings: GalaxySettings): GalaxySettings {
   return {
     ...settings,
+    galaxies: settings.galaxies === 3 ? 3 : 2,
     friction: settings.halo && settings.friction,
     pericenter_kpc: settings.custom_encounter ? settings.pericenter_kpc : DEFAULT_GALAXY_SETTINGS.pericenter_kpc,
     eccentricity: settings.custom_encounter ? settings.eccentricity : DEFAULT_GALAXY_SETTINGS.eccentricity,
@@ -101,14 +115,15 @@ export function matching_preset(settings: GalaxySettings): string | null {
  * Converts the settings into the options of the scene.
  */
 export function galaxy_options(settings: GalaxySettings): GalaxyOptions {
-  const { halo, bulge, friction, spins, custom_encounter, pericenter_kpc, eccentricity, stars } = canonical(settings);
+  const { halo, bulge, friction, spins, custom_encounter, pericenter_kpc, eccentricity, stars, galaxies } = canonical(settings);
   return {
     halo: halo ? GALAXY_HALO : null,
     bulge_radius: bulge ? GALAXY_BULGE_RADIUS : 0,
     friction,
     spins,
     stars,
-    encounter: custom_encounter ? { pericenter: pericenter_kpc * GALAXY_UNITS.meters_per_length_unit, eccentricity } : undefined,
+    galaxies,
+    encounter: galaxies === 2 && custom_encounter ? { pericenter: pericenter_kpc * GALAXY_UNITS.meters_per_length_unit, eccentricity } : undefined,
   };
 }
 
@@ -157,7 +172,9 @@ export function normalize_galaxy_settings(value: unknown): GalaxySettings {
   const spin = (index: number) =>
     Array.isArray(saved.spins) && (saved.spins[index] === 1 || saved.spins[index] === -1) ? saved.spins[index] : 1;
   const stars = number_in(saved.stars, 0, 10000, defaults.stars);
+  const galaxies = saved.galaxies === 3 ? 3 : 2;
   return canonical({
+    galaxies,
     halo: flag("halo"),
     bulge: flag("bulge"),
     friction: flag("friction"),
