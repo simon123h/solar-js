@@ -2,6 +2,7 @@ import createSolarSystem from "./universes/solar-system";
 import createGalaxyCollision, { GALAXY_BULGE_RADIUS, GALAXY_HALO } from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
 import { Universe } from "./universe";
+import { format_time, scale_bar } from "./units";
 import { get_local_storage, load_settings, save_settings } from "./settings";
 
 type UniverseFactory = () => Universe;
@@ -215,6 +216,35 @@ function redraw(): void {
       ctx.globalAlpha = 1;
     }
   }
+
+  draw_scale_bar(width, height);
+}
+
+/**
+ * Draws a scale bar in the bottom right corner, if the universe has units for lengths.
+ * @param width - The canvas width in CSS pixels.
+ * @param height - The canvas height in CSS pixels.
+ */
+function draw_scale_bar(width: number, height: number): void {
+  if (!currentUniverse) return;
+  const bar = scale_bar(currentUniverse.physics.length_scale, currentUniverse.units);
+  if (!bar) return;
+
+  const right = width - 20;
+  const left = right - bar.length_px;
+  const y = height - 24;
+  ctx.strokeStyle = "#888";
+  ctx.fillStyle = "#888";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(left, y - 4);
+  ctx.lineTo(left, y + 4);
+  ctx.moveTo(left, y);
+  ctx.lineTo(right, y);
+  ctx.moveTo(right, y - 4);
+  ctx.lineTo(right, y + 4);
+  ctx.stroke();
+  ctx.fillText(bar.label, (left + right) / 2, y - 8);
 }
 
 /**
@@ -226,7 +256,7 @@ function do_stats(now: number): void {
   const statsbox = document.getElementById("stats-box");
   if (!statsbox) return;
 
-  const days = "Day " + (currentUniverse.physics.time / 60 / 60 / 24).toFixed(0);
+  const time = format_time(currentUniverse.physics.time, currentUniverse.units);
   const elapsed = now - _last_stats.time;
   const fps = (_last_stats.frames / elapsed) * 1000;
   _last_stats.time = now;
@@ -236,7 +266,7 @@ function do_stats(now: number): void {
   // share of the wall-clock time spent computing forces
   const load = Math.round((currentUniverse.stats.force_time / elapsed) * 100) + "%<br>";
   const energy_drift = (currentUniverse.total_energy() - initial_energy) / (Math.abs(initial_energy) || 1);
-  statsbox.innerHTML = fpsStr + "<br>" + days + "<br>Load: " + load + "dE/E: " + energy_drift.toExponential(1);
+  statsbox.innerHTML = fpsStr + "<br>" + time + "<br>Load: " + load + "dE/E: " + energy_drift.toExponential(1);
 
   // Reset force_time accumulator
   currentUniverse.stats.force_time = 0;
