@@ -1,4 +1,5 @@
-import { HaloSpec, Universe } from "../universe";
+import { Planet } from "../planet";
+import { HaloSpec, PlanetSpec, Universe } from "../universe";
 
 /** Number of spiral arms of each galaxy. */
 const ARMS = 2;
@@ -27,6 +28,21 @@ export function spiral_angle(radius: number, random: () => number): number {
 }
 
 /**
+ * Gives a star on a circular orbit a random velocity, like the random motions of real stars in a disk.
+ * @param planet - The star, already placed on a circular orbit around the galaxy.
+ * @param galaxy - The galaxy the star orbits.
+ * @param fraction - The standard deviation of each velocity component, as a fraction of the orbital speed.
+ * @param random - Source of randomness.
+ */
+export function add_velocity_dispersion(planet: Planet, galaxy: Planet, fraction: number, random: () => number): void {
+  const sigma = fraction * Math.hypot(planet.vx - galaxy.vx, planet.vy - galaxy.vy);
+  // the sum of three uniform numbers, scaled to a standard deviation of 1, is roughly Gaussian
+  const gaussian = () => 2 * (random() + random() + random() - 1.5);
+  planet.vx += sigma * gaussian();
+  planet.vy += sigma * gaussian();
+}
+
+/**
  * The dark matter halo of each galaxy in the variant with halos. It flattens the rotation curve of the
  * disk, so the stars orbit at more similar speeds, and keeps the galaxies' encounter close to the original.
  */
@@ -48,6 +64,8 @@ export interface GalaxyOptions {
   halo?: HaloSpec | null;
   /** The core radius of each galaxy's central mass in meters; 0 (the default) makes it a point mass. */
   bulge_radius?: number;
+  /** The random velocity of the stars as a fraction of their orbital speed; 0.1 by default. */
+  dispersion?: number;
 }
 
 /**
@@ -57,7 +75,7 @@ export interface GalaxyOptions {
  * @returns The created Universe instance configured with two colliding galaxies.
  */
 export default function createGalaxyCollision(random: () => number = Math.random, options: GalaxyOptions = {}): Universe {
-  const { halo = null, bulge_radius = 0 } = options;
+  const { halo = null, bulge_radius = 0, dispersion = 0.1 } = options;
   const universe = new Universe();
   universe.random = random;
   universe.physics.G = 6.674e-11;
@@ -101,6 +119,13 @@ export default function createGalaxyCollision(random: () => number = Math.random
     for (const galaxy of [mw, ag]) universe.add_halo(galaxy, halo.v0, halo.core_radius, halo.truncation_radius);
   }
 
+  /** Adds a star on an orbit inside a spiral arm of the galaxy, with some random motion. */
+  const add_star = (spec: PlanetSpec, radius: number, galaxy: Planet): void => {
+    const star = universe.generate_planets([spec])[0];
+    universe.circularize(star, radius, galaxy, 1, spiral_angle(radius, universe.random));
+    add_velocity_dispersion(star, galaxy, dispersion, universe.random);
+  };
+
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
     // highlight the earth: the first body of the Milky Way is a full, non-dummy planet
     const is_earth = n === 0;
@@ -113,7 +138,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
       is_dummy: !is_earth,
     };
     const radius = 1e11 * (0.2 + universe.random());
-    universe.circularize(universe.generate_planets([planet])[0], radius, mw, 0.9, spiral_angle(radius, universe.random));
+    add_star(planet, radius, mw);
   }
 
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
@@ -126,7 +151,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
       is_dummy: true,
     };
     const radius = 1e11 * (0.2 + universe.random());
-    universe.circularize(universe.generate_planets([planet])[0], radius, ag, 0.9, spiral_angle(radius, universe.random));
+    add_star(planet, radius, ag);
   }
 
   return universe;
