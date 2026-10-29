@@ -26,6 +26,10 @@ describe("Universe Factories", () => {
     expect(universe.get_planet_by_name("Milky Way")).toBeDefined();
     expect(universe.get_planet_by_name("Andromeda Galaxy")).toBeDefined();
 
+    // thousands of stars, all but the two galaxies and the Earth being cheap dummy planets
+    expect(universe.planets.length).toBeGreaterThan(6000);
+    expect(universe.planets.filter((p) => !p.is_dummy)).toHaveLength(3);
+
     const earth = universe.get_planet_by_name("Earth");
     expect(earth?.is_dummy).toBe(false);
     expect(universe.planets.filter((p) => !p.is_dummy).map((p) => p.name)).toEqual(["Milky Way", "Andromeda Galaxy", "Earth"]);

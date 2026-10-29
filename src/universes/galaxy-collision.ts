@@ -119,7 +119,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
   universe.physics.dt = 60 * 60 * 3;
   universe.physics.trace_age = 60 * 60 * 24 * 400;
   universe.physics.substeps = 3;
-  universe.physics.n_asteroids = 500;
+  universe.physics.n_asteroids = 3000;
 
   const milkyway = {
     name: "Milky Way",
@@ -166,7 +166,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
       color: is_earth ? "#0077ff" : "#CCF",
       mass: 1e15,
       radius: is_earth ? 2 : 1,
-      shadow: 6,
+      shadow: is_earth ? 6 : undefined,
       is_dummy: !is_earth,
     };
     const radius = 1e11 * (0.2 + universe.random());
@@ -179,7 +179,6 @@ export default function createGalaxyCollision(random: () => number = Math.random
       color: "#FFC",
       mass: 1e15,
       radius: 1,
-      shadow: 6,
       is_dummy: true,
     };
     const radius = 1e11 * (0.2 + universe.random());

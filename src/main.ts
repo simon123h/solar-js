@@ -1,6 +1,7 @@
 import createSolarSystem from "./universes/solar-system";
 import createGalaxyCollision, { GALAXY_BULGE_RADIUS, GALAXY_HALO } from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
+import { Planet } from "./planet";
 import { Universe } from "./universe";
 import { format_time, scale_bar } from "./units";
 import { get_local_storage, load_settings, save_settings } from "./settings";
@@ -182,7 +183,10 @@ function redraw(): void {
   ctx.font = "12px sans-serif";
   ctx.textAlign = "center";
 
+  draw_stars(currentUniverse.planets, width, height, scale);
+
   for (const planet of currentUniverse.planets) {
+    if (planet.is_dummy) continue;
     ctx.fillStyle = planet.color;
     if (planet.shadow !== null) {
       ctx.shadowColor = planet.color;
@@ -197,9 +201,9 @@ function redraw(): void {
     ctx.shadowBlur = 0;
     ctx.fillStyle = "#888";
     // draw label
-    if (!planet.is_dummy && planet.name !== "") ctx.fillText(planet.name, x, y - 1.05 * planet.radius - 5);
+    if (planet.name !== "") ctx.fillText(planet.name, x, y - 1.05 * planet.radius - 5);
     // draw trace
-    if (!planet.is_dummy && planet.trace !== null) {
+    if (planet.trace !== null) {
       ctx.strokeStyle = planet.color;
       for (let i = planet.trace.length - 1; i >= 0; i--) {
         const t = planet.trace[i];
@@ -218,6 +222,34 @@ function redraw(): void {
   }
 
   draw_scale_bar(width, height);
+}
+
+/**
+ * Draws the dummy planets ("stars") as small additive squares. This is much cheaper than a glowing circle
+ * for each of thousands of stars, and overlapping stars add up, so dense regions look brighter.
+ * @param planets - All planets; only the dummy ones are drawn.
+ * @param width - The canvas width in CSS pixels.
+ * @param height - The canvas height in CSS pixels.
+ * @param scale - The length scale: simulated meters per pixel.
+ */
+function draw_stars(planets: Planet[], width: number, height: number, scale: number): void {
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = 0.75;
+  let color = "";
+  for (const star of planets) {
+    if (!star.is_dummy) continue;
+    const x = width / 2 + star.x / scale;
+    const y = height / 2 + star.y / scale;
+    const size = 2 * star.radius;
+    if (x < -size || x > width || y < -size || y > height) continue;
+    if (star.color !== color) {
+      color = star.color;
+      ctx.fillStyle = color;
+    }
+    ctx.fillRect(x - star.radius, y - star.radius, size, size);
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
 }
 
 /**
