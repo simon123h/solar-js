@@ -14,6 +14,7 @@ export interface PlanetSpec {
   shadow?: number;
   is_dummy?: boolean;
   core_radius?: number;
+  highlight?: boolean;
 }
 
 interface PhysicsConfig {
@@ -153,6 +154,7 @@ export class Universe {
       planet.shadow = p.shadow ?? planet.shadow;
       planet.is_dummy = p.is_dummy ?? planet.is_dummy;
       planet.core_radius = p.core_radius ?? planet.core_radius;
+      planet.highlight = p.highlight ?? planet.highlight;
       created.push(planet);
     }
     this.planets.push(...created);

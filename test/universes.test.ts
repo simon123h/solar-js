@@ -205,6 +205,31 @@ describe("Universe Factories", () => {
     });
   });
 
+  describe("the Earth", () => {
+    it("should be the only highlighted body, so that it stands out among thousands of stars", () => {
+      const universe = createGalaxyCollision(seeded_random(1));
+      const highlighted = universe.planets.filter((p) => p.highlight);
+      expect(highlighted.map((p) => p.name)).toEqual(["Earth"]);
+      expect(highlighted[0].is_dummy).toBe(false);
+      // larger than any of the stars, which have a radius of 1
+      expect(highlighted[0].radius).toBeGreaterThan(2);
+    });
+
+    it("should orbit 8 kpc from the center, wherever the random stars end up", () => {
+      for (const seed of [1, 2, 3, 4]) {
+        const universe = createGalaxyCollision(seeded_random(seed));
+        const [mw] = universe.planets;
+        const earth = universe.get_planet_by_name("Earth")!;
+        expect(Math.hypot(earth.x - mw.x, earth.y - mw.y) / GALAXY_UNITS.meters_per_length_unit).toBeCloseTo(8, 6);
+      }
+    });
+
+    it("should be the Milky Way's only star when each galaxy has just one", () => {
+      const universe = createGalaxyCollision(seeded_random(1), { stars: 1 });
+      expect(universe.planets.map((p) => p.name)).toEqual(["Milky Way", "Andromeda Galaxy", "Earth", "AG0"]);
+    });
+  });
+
   describe("exponential disk", () => {
     const scale = 0.35e11;
     const min_radius = 0.02e11;

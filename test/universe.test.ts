@@ -34,6 +34,16 @@ describe("Universe", () => {
     expect([p2.x, p2.y, p2.vx, p2.vy, p2.shadow, p2.is_dummy]).toEqual([0, 0, 0, 0, null, false]);
   });
 
+  it("should copy the highlight of a planet, which is off by default", () => {
+    const universe = new Universe();
+    const [plain, marked] = universe.generate_planets([
+      { name: "Plain", mass: 100, radius: 10 },
+      { name: "Marked", mass: 100, radius: 10, highlight: true },
+    ]);
+    expect(plain.highlight).toBe(false);
+    expect(marked.highlight).toBe(true);
+  });
+
   it("should find planet by name", () => {
     const universe = new Universe();
     universe.generate_planets([

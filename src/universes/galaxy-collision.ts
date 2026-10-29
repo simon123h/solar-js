@@ -15,6 +15,12 @@ const INNER_RADIUS = 0.2e11;
 /** Angular spread of the stars around the center line of an arm, in radians. */
 const ARM_SPREAD = 0.3;
 
+/** The orbit radius of the Earth: 8 kpc from the center, as far out as the Sun is in the Milky Way. */
+const EARTH_ORBIT_RADIUS = 0.8e11;
+
+/** A blue that stands out against the white and yellow stars. */
+const EARTH_COLOR = "#3da5ff";
+
 /** The scale length of the exponential disks: the surface density falls by a factor e over this distance. */
 const DISK_SCALE_LENGTH = 0.35e11;
 
@@ -216,17 +222,21 @@ export default function createGalaxyCollision(random: () => number = Math.random
   };
 
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
-    // highlight the earth: the first body of the Milky Way is a full, non-dummy planet
+    // the first body of the Milky Way is the Earth: a full, non-dummy planet that is highlighted in the picture
     const is_earth = n === 0;
     const planet = {
       name: is_earth ? "Earth" : "MW" + n,
-      color: is_earth ? "#0077ff" : "#CCF",
+      color: is_earth ? EARTH_COLOR : "#CCF",
       mass: 1e15,
-      radius: is_earth ? 2 : 1,
-      shadow: is_earth ? 6 : undefined,
+      radius: is_earth ? 3 : 1,
+      highlight: is_earth,
+      shadow: is_earth ? 8 : undefined,
       is_dummy: !is_earth,
     };
-    const radius = exponential_disk_radius(universe.random, DISK_SCALE_LENGTH, DISK_MIN_RADIUS, DISK_MAX_RADIUS);
+    // at a fixed distance from the center, in an arm, like the Sun in our galaxy; random places would often hide it in the bulge
+    const radius = is_earth
+      ? EARTH_ORBIT_RADIUS
+      : exponential_disk_radius(universe.random, DISK_SCALE_LENGTH, DISK_MIN_RADIUS, DISK_MAX_RADIUS);
     add_star(planet, radius, mw, spins[0]);
   }
 

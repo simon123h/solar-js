@@ -15,6 +15,8 @@ export class Planet {
   is_dummy: boolean = false;
   /** Plummer scale length in meters of the planet's own mass distribution; 0 for a point mass. */
   core_radius: number = 0;
+  /** Whether to draw the planet with a prominent label and a stronger trace, so that it stands out in a crowd. */
+  highlight: boolean = false;
   trace: Array<[number, number, number]> | null = null;
   shadow: number | null = null;
 

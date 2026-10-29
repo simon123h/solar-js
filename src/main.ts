@@ -213,13 +213,15 @@ function redraw(): void {
     ctx.shadowBlur = 0;
     ctx.fillStyle = "#888";
     // draw label
-    if (planet.name !== "") ctx.fillText(planet.name, x, y - 1.05 * planet.radius - 5);
+    if (planet.name !== "") draw_label(planet, x, y);
     // draw trace
     if (planet.trace !== null) {
       ctx.strokeStyle = planet.color;
       for (let i = planet.trace.length - 1; i >= 0; i--) {
         const t = planet.trace[i];
-        ctx.globalAlpha = (1 - (currentUniverse.physics.time - t[0]) / currentUniverse.physics.trace_age) / 2;
+        const alpha = (1 - (currentUniverse.physics.time - t[0]) / currentUniverse.physics.trace_age) / 2;
+        // the trace of a highlighted planet is more opaque, so it shows between the stars
+        ctx.globalAlpha = planet.highlight ? Math.min(1, 2 * alpha) : alpha;
         const tx = width / 2 + t[1] / scale;
         const ty = height / 2 + t[2] / scale;
         ctx.beginPath();
@@ -234,6 +236,25 @@ function redraw(): void {
   }
 
   draw_scale_bar(width, height);
+}
+
+/**
+ * Draws the name of a planet above it, with a dark outline so that it can be read over a crowd of stars.
+ * A highlighted planet gets a larger bold label in its own color.
+ * @param planet - The planet to label.
+ * @param x - The x position of the planet in CSS pixels.
+ * @param y - The y position of the planet in CSS pixels.
+ */
+function draw_label(planet: Planet, x: number, y: number): void {
+  const offset = planet.highlight ? planet.radius + 8 : 1.05 * planet.radius + 5;
+  ctx.font = planet.highlight ? "bold 14px sans-serif" : "12px sans-serif";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "black";
+  ctx.strokeText(planet.name, x, y - offset);
+  ctx.fillStyle = planet.highlight ? planet.color : "#888";
+  ctx.fillText(planet.name, x, y - offset);
+  ctx.lineWidth = 1;
 }
 
 /**
@@ -279,6 +300,7 @@ function draw_scale_bar(width: number, height: number): void {
   const y = height - 24;
   ctx.strokeStyle = "#888";
   ctx.fillStyle = "#888";
+  ctx.font = "12px sans-serif";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(left, y - 4);
