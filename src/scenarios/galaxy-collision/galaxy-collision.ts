@@ -194,8 +194,8 @@ export default function createGalaxyCollision(random: () => number = Math.random
   if (galaxies === 3) {
     // Triple galaxy encounter: 3 galaxies placed at 120-degree intervals
     const separation = 350e9; // 35 kpc from center
-    const infall_speed = 7.5e4; // 75 km/s
-    const tangential_speed = 5.5e4; // 55 km/s
+    const infall_speed = 1.5e3; // 1.5 km/s infall
+    const tangential_speed = 3.5e3; // 3.5 km/s tangential orbital motion
 
     const specs: { name: string; color: string; starColor: string; mass: number; angle: number; spin: number }[] = [
       {
