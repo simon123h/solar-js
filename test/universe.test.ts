@@ -120,6 +120,24 @@ describe("Universe", () => {
     expect(Math.hypot(planet.vx + 500, planet.vy - 2000)).toBeCloseTo(speed, 0);
   });
 
+  it("should place the planet at the given start angle", () => {
+    const universe = new Universe();
+    universe.generate_planets([
+      { name: "Sun", mass: 1e30, radius: 10, x: 1e11, y: 2e11 },
+      { name: "Earth", mass: 1e24, radius: 5 },
+    ]);
+    const [sun, earth] = universe.planets;
+    universe.random = () => {
+      throw new Error("the start angle should replace the random one");
+    };
+    universe.circularize(earth, 1e11, sun, 1, Math.PI / 2);
+    expect(earth.x).toBeCloseTo(1e11, -3);
+    expect(earth.y).toBeCloseTo(3e11, -3);
+    // moving tangentially: counter-clockwise on screen at the top of the orbit means towards +x
+    expect(earth.vx).toBeGreaterThan(0);
+    expect(earth.vy).toBeCloseTo(0, 6);
+  });
+
   it("should use the injected random source in circularize", () => {
     const universe = new Universe();
     universe.random = () => 0;

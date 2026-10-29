@@ -121,9 +121,10 @@ export class Universe {
    * @param attractor - The planet(s) to orbit around. If an array, orbits the center of mass.
    *   The orbiting planet also moves with the attractor's (center of mass) velocity.
    * @param sign - The direction of orbit (1 for counter-clockwise, -1 for clockwise).
+   * @param start_angle - The angle in radians at which to place the planet on the orbit; random if omitted.
    * @throws If the orbit radius is not positive or the attractor has no mass.
    */
-  circularize(planet: Planet, orbit_radius: number, attractor: Planet | Planet[], sign: number = 1): void {
+  circularize(planet: Planet, orbit_radius: number, attractor: Planet | Planet[], sign: number = 1, start_angle?: number): void {
     if (!(orbit_radius > 0)) throw new Error("circularize: orbit_radius must be positive");
 
     // if attractor is a list of planets, compute their gravitational center
@@ -155,7 +156,7 @@ export class Universe {
     if (!(centerOfMass.mass > 0)) throw new Error("circularize: attractor must have positive mass");
 
     // put planet somewhere on the orbit
-    let angle = this.random() * 2 * Math.PI;
+    let angle = start_angle ?? this.random() * 2 * Math.PI;
     planet.x = centerOfMass.x + orbit_radius * Math.cos(angle);
     planet.y = centerOfMass.y + orbit_radius * Math.sin(angle);
 
