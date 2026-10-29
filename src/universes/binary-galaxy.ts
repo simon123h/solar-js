@@ -55,7 +55,7 @@ export default function createBinaryGalaxy(
   const v2 = (m1 / totalMass) * vRel;
 
   const bh1Spec: PlanetSpec = {
-    name: "Primary Black Hole",
+    name: "",
     mass: m1,
     radius: 6,
     color: "#a855f7", // purple
@@ -69,7 +69,7 @@ export default function createBinaryGalaxy(
   };
 
   const bh2Spec: PlanetSpec = {
-    name: "Secondary Black Hole",
+    name: "",
     mass: m2,
     radius: Math.max(3, Math.round(6 * Math.cbrt(q))),
     color: "#ec4899", // pink

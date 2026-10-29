@@ -547,9 +547,8 @@ describe("Universe Factories", () => {
       halo: true,
     });
     const nonDummies = universe.planets.filter((p) => !p.is_dummy);
-    expect(nonDummies).toHaveLength(3); // Primary BH, Secondary BH, and Solar System
-    expect(universe.get_planet_by_name("Primary Black Hole")).toBeDefined();
-    expect(universe.get_planet_by_name("Secondary Black Hole")).toBeDefined();
+    expect(nonDummies).toHaveLength(3); // 2 BHs + Solar System
+    expect(universe.get_planet_by_name("Solar System")).toBeDefined();
     expect(universe.planets).toHaveLength(52); // 2 BHs + 50 stars
   });
 
