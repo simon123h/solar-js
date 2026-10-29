@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import createSolarSystem from "../src/universes/solar-system";
-import createGalaxyCollision, { GALAXY_HALO, spiral_angle } from "../src/universes/galaxy-collision";
+import createGalaxyCollision, { GALAXY_BULGE_RADIUS, GALAXY_HALO, spiral_angle } from "../src/universes/galaxy-collision";
 import createNBodyUniverse from "../src/universes/n-body-universe";
 import { seeded_random } from "../src/random";
 import { Universe } from "../src/universe";
@@ -24,10 +24,15 @@ describe("Universe Factories", () => {
     expect(universe.planets.filter((p) => !p.is_dummy).map((p) => p.name)).toEqual(["Milky Way", "Andromeda Galaxy", "Earth"]);
   });
 
-  it("should resolve passes through the galaxy cores with its time step", () => {
-    const universe = createGalaxyCollision();
+  it.each([
+    ["without a bulge", {}],
+    ["with halos and bulges", { halo: GALAXY_HALO, bulge_radius: GALAXY_BULGE_RADIUS }],
+  ])("should resolve passes through the galaxy cores with its time step %s", (_name, options) => {
+    const universe = createGalaxyCollision(seeded_random(1), options);
     const heaviest = Math.max(...universe.planets.map((p) => p.mass));
-    const core_crossing_time = Math.sqrt(universe.physics.softening ** 3 / (universe.physics.G * heaviest));
+    const [mw] = universe.planets;
+    const core = Math.sqrt(universe.physics.softening ** 2 + mw.core_radius ** 2);
+    const core_crossing_time = Math.sqrt(core ** 3 / (universe.physics.G * heaviest));
     // a time step much longer than this injects spurious energy and flings bodies out of the galaxies
     expect(core_crossing_time).toBeGreaterThan(universe.physics.dt * 2);
   });
@@ -113,6 +118,23 @@ describe("Universe Factories", () => {
       expect(plain).toBeGreaterThan(1.7);
       expect(with_halo).toBeLessThan(1.5);
       expect(with_halo).toBeGreaterThan(1);
+    });
+
+    it("should give both galaxies an extended bulge only when asked for", () => {
+      const point = createGalaxyCollision(seeded_random(1));
+      expect([point.planets[0].core_radius, point.planets[1].core_radius]).toEqual([0, 0]);
+      const bulge = createGalaxyCollision(seeded_random(1), { bulge_radius: GALAXY_BULGE_RADIUS });
+      expect([bulge.planets[0].core_radius, bulge.planets[1].core_radius]).toEqual([GALAXY_BULGE_RADIUS, GALAXY_BULGE_RADIUS]);
+    });
+
+    it("should give a rotation curve that rises through the bulge and then stays flat", () => {
+      const universe = createGalaxyCollision(seeded_random(1), { halo: GALAXY_HALO, bulge_radius: GALAXY_BULGE_RADIUS });
+      const inner = mean_speed(universe, 0.2e11, 0.3e11);
+      const middle = mean_speed(universe, 0.45e11, 0.55e11);
+      const outer = mean_speed(universe, 1.1e11, 1.2e11);
+      expect(middle).toBeGreaterThan(inner * 1.05);
+      expect(outer / middle).toBeGreaterThan(0.85);
+      expect(outer / middle).toBeLessThan(1.1);
     });
 
     it("should place the stars in the same spiral arms with or without halos", () => {

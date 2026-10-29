@@ -36,10 +36,18 @@ export const GALAXY_HALO: HaloSpec = {
   truncation_radius: 2e11,
 };
 
+/**
+ * The core radius of each galaxy's central mass in the variant with bulges. Together with the halo this gives
+ * a rotation curve that rises through the bulge and stays flat outside it, as in real spiral galaxies.
+ */
+export const GALAXY_BULGE_RADIUS = 3e10;
+
 /** Optional features of the galaxy collision. */
 export interface GalaxyOptions {
   /** If given, both galaxies get a dark matter halo with these parameters; none by default. */
   halo?: HaloSpec | null;
+  /** The core radius of each galaxy's central mass in meters; 0 (the default) makes it a point mass. */
+  bulge_radius?: number;
 }
 
 /**
@@ -49,13 +57,14 @@ export interface GalaxyOptions {
  * @returns The created Universe instance configured with two colliding galaxies.
  */
 export default function createGalaxyCollision(random: () => number = Math.random, options: GalaxyOptions = {}): Universe {
-  const { halo = null } = options;
+  const { halo = null, bulge_radius = 0 } = options;
   const universe = new Universe();
   universe.random = random;
   universe.physics.G = 6.674e-11;
   universe.physics.length_scale = 1e9;
-  // Softening acts as the core size of each galaxy. It must stay large enough for the time step to
-  // resolve a pass through the core; smaller values make close encounters numerically violent.
+  // Softening acts as the core size of each galaxy (together with the bulge radius, if there is one).
+  // It must stay large enough for the time step to resolve a pass through the core; smaller values
+  // make close encounters numerically violent.
   universe.physics.softening = 6e9;
   universe.physics.dt = 60 * 60 * 3;
   universe.physics.trace_age = 60 * 60 * 24 * 400;
@@ -64,6 +73,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
 
   const milkyway = {
     name: "Milky Way",
+    core_radius: bulge_radius,
     color: "#6ff",
     mass: 2e30,
     radius: 5,
@@ -75,6 +85,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
 
   const andromeda = {
     name: "Andromeda Galaxy",
+    core_radius: bulge_radius,
     color: "#ff6",
     mass: 4e30,
     radius: 5,

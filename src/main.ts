@@ -1,5 +1,5 @@
 import createSolarSystem from "./universes/solar-system";
-import createGalaxyCollision, { GALAXY_HALO } from "./universes/galaxy-collision";
+import createGalaxyCollision, { GALAXY_BULGE_RADIUS, GALAXY_HALO } from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
 import { Universe } from "./universe";
 import { get_local_storage, load_settings, save_settings } from "./settings";
@@ -11,6 +11,7 @@ const universeFactories: Record<string, UniverseFactory> = {
   "solar-system": createSolarSystem,
   "galaxy-collision": createGalaxyCollision,
   "galaxy-collision-halo": () => createGalaxyCollision(Math.random, { halo: GALAXY_HALO }),
+  "galaxy-collision-realistic": () => createGalaxyCollision(Math.random, { halo: GALAXY_HALO, bulge_radius: GALAXY_BULGE_RADIUS }),
   "n-body-universe": createNBodyUniverse,
 };
 
