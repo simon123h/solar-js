@@ -7,17 +7,23 @@ import { format_time, scale_bar } from "./units";
 import { DEFAULT_SETTINGS, get_local_storage, load_settings, save_settings } from "./settings";
 import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, encounter_problem, galaxy_options } from "./galaxy-settings";
 import { init_galaxy_panel } from "./galaxy-panel";
+import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, solar_options } from "./solar-settings";
+import { init_solar_panel } from "./solar-panel";
+import { DEFAULT_N_BODY_SETTINGS, NBodySettings, n_body_options } from "./n-body-settings";
+import { init_n_body_panel } from "./n-body-panel";
 
 type UniverseFactory = () => Universe;
 
-/** The settings of the galaxy collision, which can be changed in the galaxy panel. */
+/** The settings of each scenario. */
 let galaxy_settings: GalaxySettings = DEFAULT_GALAXY_SETTINGS;
+let solar_settings: SolarSystemSettings = DEFAULT_SOLAR_SETTINGS;
+let n_body_settings: NBodySettings = DEFAULT_N_BODY_SETTINGS;
 
 /** Dictionary of universe factory functions. */
 const universeFactories: Record<string, UniverseFactory> = {
-  "solar-system": createSolarSystem,
+  "solar-system": () => createSolarSystem(Math.random, solar_options(solar_settings)),
   "galaxy-collision": () => createGalaxyCollision(Math.random, galaxy_options(galaxy_settings)),
-  "n-body-universe": createNBodyUniverse,
+  "n-body-universe": () => createNBodyUniverse(Math.random, n_body_options(n_body_settings)),
 };
 
 /** Current active universe instance. */
@@ -82,17 +88,40 @@ function init(): void {
   speedSelect.value = String(settings.speed);
   loop.speed = settings.speed;
   galaxy_settings = settings.galaxy;
+  solar_settings = settings.solar;
+  n_body_settings = settings.nbody;
 
-  const save = () => save_settings(storage, { universe: universeSelect.value, speed: loop.speed, galaxy: galaxy_settings });
+  const save = () =>
+    save_settings(storage, {
+      universe: universeSelect.value,
+      speed: loop.speed,
+      galaxy: galaxy_settings,
+      solar: solar_settings,
+      nbody: n_body_settings,
+    });
 
-  // the galaxy panel is only offered for the galaxy collision
-  const galaxyButton = document.getElementById("galaxy-button") as HTMLButtonElement;
-  let galaxy_panel_open = false;
-  const update_galaxy_ui = () => {
-    const is_galaxy = universeSelect.value === "galaxy-collision";
-    galaxyButton.hidden = !is_galaxy;
-    galaxy_panel.set_open(is_galaxy && galaxy_panel_open);
+  const settingsButton = document.getElementById("scenario-settings-button") as HTMLButtonElement;
+  let panel_open = false;
+
+  const update_panels_ui = () => {
+    const universe = universeSelect.value;
+    galaxy_panel.set_open(universe === "galaxy-collision" && panel_open);
+    solar_panel.set_open(universe === "solar-system" && panel_open);
+    n_body_panel.set_open(universe === "n-body-universe" && panel_open);
   };
+
+  const solar_panel = init_solar_panel(solar_settings, (next) => {
+    solar_settings = next;
+    change_universe(universeSelect);
+    save();
+  });
+
+  const n_body_panel = init_n_body_panel(n_body_settings, (next) => {
+    n_body_settings = next;
+    change_universe(universeSelect);
+    save();
+  });
+
   const galaxy_panel = init_galaxy_panel(galaxy_settings, (next) => {
     const problem = encounter_problem(next);
     if (problem) {
@@ -115,19 +144,25 @@ function init(): void {
       galaxy_panel.show_message(`${reason} The scene was not changed.`);
     }
   });
-  galaxyButton.addEventListener("click", () => {
-    galaxy_panel_open = !galaxy_panel_open;
-    update_galaxy_ui();
+
+  settingsButton.addEventListener("click", () => {
+    panel_open = !panel_open;
+    update_panels_ui();
   });
 
   universeSelect.addEventListener("change", (e: Event) => {
     change_universe(e.target as HTMLSelectElement);
-    update_galaxy_ui();
+    update_panels_ui();
     save();
   });
   pauseButton.addEventListener("click", () => {
     loop.paused = !loop.paused;
-    pauseButton.textContent = loop.paused ? "Resume" : "Pause";
+    const pauseLabel = document.getElementById("pause-label");
+    if (pauseLabel) {
+      pauseLabel.textContent = loop.paused ? "Resume" : "Pause";
+    } else {
+      pauseButton.textContent = loop.paused ? "Resume" : "Pause";
+    }
   });
   document.getElementById("reset-button")!.addEventListener("click", () => change_universe(universeSelect));
   speedSelect.addEventListener("change", () => {
@@ -145,7 +180,7 @@ function init(): void {
     change_universe(universeSelect);
     save();
   }
-  update_galaxy_ui();
+  update_panels_ui();
 
   // start the simulation
   run_simulation();

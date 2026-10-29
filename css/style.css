@@ -13,41 +13,119 @@ body {
 
 #stats-box {
   position: fixed;
-  top: 0px;
-  left: 0px;
-  background-color: rgba(255, 255, 255, 0.3);
-  color: black;
-  font-family: monospace;
-  font-size: 0.9em;
-  /* width: 200px; */
-  min-width: 60px;
-  padding: 4px;
-  text-align: center;
+  top: 12px;
+  left: 12px;
+  width: 220px;
+  box-sizing: border-box;
+  background-color: rgba(20, 24, 33, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+  line-height: 1.45;
+  padding: 8px 12px;
+  text-align: left;
+  user-select: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-#settings {
+#controls-bar {
   position: fixed;
-  bottom: 0px;
-  left: 0px;
-  background-color: rgba(255, 255, 255, 0.3);
-  color: black;
-  font-family: monospace;
-  font-size: 1.3em;
-  /* width: 200px; */
-  min-width: 60px;
-  padding: 6px 10px;
+  bottom: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  background-color: rgba(20, 24, 33, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 3px 4px;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.btn {
+  background: transparent;
+  color: #e2e8f0;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.btn:active {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+#pause-button {
+  width: 76px;
+  box-sizing: border-box;
+}
+
+.select-wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.control-group select {
+  background: transparent;
+  color: #e2e8f0;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.15s ease;
+}
+
+.control-group select:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.control-group select option {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+#speed-select {
+  width: 62px;
+  box-sizing: border-box;
   text-align: center;
 }
 
-#settings select,
-#settings button {
-  background: none;
-  border: none;
-  font: inherit;
-  cursor: pointer;
+#universe-select {
+  min-width: 135px;
 }
 
-#galaxy-panel {
+#galaxy-panel,
+#solar-panel,
+#n-body-panel {
   position: fixed;
   top: 0px;
   right: 0px;
@@ -62,27 +140,37 @@ body {
   font-size: 0.9em;
 }
 
-#galaxy-panel[hidden] {
+#galaxy-panel[hidden],
+#solar-panel[hidden],
+#n-body-panel[hidden] {
   display: none;
 }
 
-#galaxy-panel h2 {
+#galaxy-panel h2,
+#solar-panel h2,
+#n-body-panel h2 {
   margin: 0 0 6px 0;
   font-size: 1.1em;
 }
 
-#galaxy-panel fieldset {
+#galaxy-panel fieldset,
+#solar-panel fieldset,
+#n-body-panel fieldset {
   margin: 6px 0;
   padding: 4px 8px;
   border: 1px solid rgba(0, 0, 0, 0.3);
 }
 
-#galaxy-panel label {
+#galaxy-panel label,
+#solar-panel label,
+#n-body-panel label {
   display: block;
   margin: 3px 0;
 }
 
-#galaxy-panel .row {
+#galaxy-panel .row,
+#solar-panel .row,
+#n-body-panel .row {
   display: flex;
   justify-content: space-between;
   align-items: center;
