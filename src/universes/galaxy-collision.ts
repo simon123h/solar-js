@@ -14,6 +14,38 @@ const INNER_RADIUS = 0.2e11;
 /** Angular spread of the stars around the center line of an arm, in radians. */
 const ARM_SPREAD = 0.3;
 
+/** The scale length of the exponential disks: the surface density falls by a factor e over this distance. */
+const DISK_SCALE_LENGTH = 0.35e11;
+
+/** The innermost and outermost orbit radius of the stars. */
+const DISK_MIN_RADIUS = 0.02e11;
+const DISK_MAX_RADIUS = 1.6e11;
+
+/**
+ * Picks an orbit radius for a star in an exponential disk, whose surface density falls off as exp(-r / scale).
+ * The number of stars within a radius r is then proportional to 1 - (1 + r / scale) * exp(-r / scale), which is
+ * inverted here for a random number.
+ * @param random - Source of randomness.
+ * @param scale - The scale length of the disk.
+ * @param min_radius - The innermost radius.
+ * @param max_radius - The outermost radius.
+ * @returns A radius between the two limits.
+ */
+export function exponential_disk_radius(random: () => number, scale: number, min_radius: number, max_radius: number): number {
+  const cumulative = (r: number) => 1 - (1 + r / scale) * Math.exp(-r / scale);
+  const lowest = cumulative(min_radius);
+  const target = lowest + random() * (cumulative(max_radius) - lowest);
+  // the cumulative distribution increases monotonically, so bisection converges
+  let low = min_radius;
+  let high = max_radius;
+  for (let i = 0; i < 60; i++) {
+    const middle = (low + high) / 2;
+    if (cumulative(middle) < target) low = middle;
+    else high = middle;
+  }
+  return (low + high) / 2;
+}
+
 /**
  * Picks the angle at which to place a star so that stars gather along logarithmic spiral arms.
  * The arms trail behind the direction of rotation, like in real spiral galaxies.
@@ -169,7 +201,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
       shadow: is_earth ? 6 : undefined,
       is_dummy: !is_earth,
     };
-    const radius = 1e11 * (0.2 + universe.random());
+    const radius = exponential_disk_radius(universe.random, DISK_SCALE_LENGTH, DISK_MIN_RADIUS, DISK_MAX_RADIUS);
     add_star(planet, radius, mw, spins[0]);
   }
 
@@ -181,7 +213,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
       radius: 1,
       is_dummy: true,
     };
-    const radius = 1e11 * (0.2 + universe.random());
+    const radius = exponential_disk_radius(universe.random, DISK_SCALE_LENGTH, DISK_MIN_RADIUS, DISK_MAX_RADIUS);
     add_star(planet, radius, ag, spins[1]);
   }
 

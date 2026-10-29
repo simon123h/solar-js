@@ -5,6 +5,7 @@ import createGalaxyCollision, {
   GALAXY_HALO,
   GALAXY_UNITS,
   add_velocity_dispersion,
+  exponential_disk_radius,
   spiral_angle,
 } from "../src/universes/galaxy-collision";
 import createNBodyUniverse from "../src/universes/n-body-universe";
@@ -118,6 +119,47 @@ describe("Universe Factories", () => {
       const myr = (160 * 86400) / GALAXY_UNITS.seconds_per_time_unit;
       expect(myr).toBeGreaterThan(200);
       expect(myr).toBeLessThan(400);
+    });
+  });
+
+  describe("exponential disk", () => {
+    const scale = 0.35e11;
+    const min_radius = 0.02e11;
+    const max_radius = 1.6e11;
+    const cumulative = (r: number) => 1 - (1 + r / scale) * Math.exp(-r / scale);
+    const expected_fraction_within = (r: number) =>
+      (cumulative(r) - cumulative(min_radius)) / (cumulative(max_radius) - cumulative(min_radius));
+
+    it("should stay within the given limits", () => {
+      const random = seeded_random(5);
+      for (let i = 0; i < 2000; i++) {
+        const r = exponential_disk_radius(random, scale, min_radius, max_radius);
+        expect(r).toBeGreaterThanOrEqual(min_radius);
+        expect(r).toBeLessThanOrEqual(max_radius);
+      }
+    });
+
+    it("should follow the radial distribution of an exponential disk", () => {
+      const random = seeded_random(6);
+      const radii = Array.from({ length: 20000 }, () => exponential_disk_radius(random, scale, min_radius, max_radius));
+      for (const r of [0.05e11, 0.2e11, 0.35e11, 0.7e11, 1.1e11, 1.5e11]) {
+        const fraction = radii.filter((x) => x <= r).length / radii.length;
+        expect(Math.abs(fraction - expected_fraction_within(r))).toBeLessThan(0.01);
+      }
+    });
+
+    it("should put the most stars in the center, per unit area", () => {
+      const universe = createGalaxyCollision(seeded_random(1));
+      const [mw] = universe.planets;
+      const radii = universe.planets.filter((p) => p.name.startsWith("MW")).map((p) => Math.hypot(p.x - mw.x, p.y - mw.y));
+      const density = (inner: number, outer: number) =>
+        radii.filter((r) => r >= inner && r < outer).length / (Math.PI * (outer ** 2 - inner ** 2));
+      // the old uniform radii left the middle of the galaxy empty
+      expect(Math.min(...radii)).toBeLessThan(0.05e11);
+      const bands = [density(0.02e11, 0.2e11), density(0.2e11, 0.5e11), density(0.5e11, 0.9e11), density(0.9e11, 1.6e11)];
+      expect(bands[0]).toBeGreaterThan(bands[1]);
+      expect(bands[1]).toBeGreaterThan(bands[2]);
+      expect(bands[2]).toBeGreaterThan(bands[3]);
     });
   });
 
