@@ -1,4 +1,5 @@
 import { Universe, PlanetSpec } from "../universe";
+import { DEFAULT_SOLAR_SETTINGS, SolarSystemOptions } from "../solar-settings";
 
 /** A planet specification with the radius of its circular orbit around the sun. */
 interface OrbitingSpec extends PlanetSpec {
@@ -8,9 +9,13 @@ interface OrbitingSpec extends PlanetSpec {
 /**
  * Creates a solar system universe.
  * @param random - Source of randomness, e.g. a seeded generator for a reproducible scene.
+ * @param options - Configuration options for the solar system simulation.
  * @returns The created Universe instance configured with solar system planets.
  */
-export default function createSolarSystem(random: () => number = Math.random): Universe {
+export default function createSolarSystem(
+  random: () => number = Math.random,
+  options: SolarSystemOptions = DEFAULT_SOLAR_SETTINGS,
+): Universe {
   const universe = new Universe();
   universe.random = random;
   universe.physics.G = 6.674e-11;
@@ -19,7 +24,7 @@ export default function createSolarSystem(random: () => number = Math.random): U
   universe.physics.dt = 60 * 60 * 6;
   universe.physics.trace_age = 60 * 60 * 24 * 400;
   universe.physics.substeps = 2;
-  universe.physics.n_asteroids = 400;
+  universe.physics.n_asteroids = options.asteroids;
 
   const specs: OrbitingSpec[] = [
     {
@@ -94,14 +99,17 @@ export default function createSolarSystem(random: () => number = Math.random): U
       radius: 5,
       orbitRadius: 4.498e12,
     },
-    {
+  ];
+
+  if (options.include_pluto) {
+    specs.push({
       name: "Pluto",
       color: "#808080",
       mass: 1.303e22,
       radius: 5,
       orbitRadius: 6.089e12,
-    },
-  ];
+    });
+  }
 
   // add the asteroid belt
   for (let n = 0; n < universe.physics.n_asteroids!; n++) {
