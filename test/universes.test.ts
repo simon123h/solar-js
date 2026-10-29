@@ -20,6 +20,69 @@ describe("Universe Factories", () => {
     expect(universe.planets.length).toBeGreaterThan(10);
     expect(universe.get_planet_by_name("Sun")).toBeDefined();
     expect(universe.get_planet_by_name("Earth")).toBeDefined();
+    expect(universe.get_planet_by_name("Pluto")).toBeDefined();
+  });
+
+  it("should support Solar System options", () => {
+    const universeWithoutPluto = createSolarSystem(Math.random, { asteroids: 10, include_pluto: false });
+    expect(universeWithoutPluto.get_planet_by_name("Pluto")).toBeNull();
+    // 9 planets without Pluto (Sun + Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune) + 10 asteroids
+    expect(universeWithoutPluto.planets).toHaveLength(9 + 10);
+  });
+
+  it("should create N-body Universe with configured bodies and velocity arrangements", () => {
+    const stationary = createNBodyUniverse(Math.random, {
+      bodies: 20,
+      velocity_arrangement: "stationary",
+    });
+    expect(stationary.planets).toHaveLength(20);
+    expect(stationary.planets.every((p) => p.vx === 0 && p.vy === 0)).toBe(true);
+
+    const circular = createNBodyUniverse(Math.random, {
+      bodies: 20,
+      velocity_arrangement: "circular",
+      velocity_scale: 1.0,
+    });
+    expect(circular.planets).toHaveLength(20);
+    // In circular velocity arrangement, vx and vy are non-zero (unless exactly at origin)
+    const hasMotion = circular.planets.some((p) => p.vx !== 0 || p.vy !== 0);
+    expect(hasMotion).toBe(true);
+
+    // Test velocity scale changes the magnitude of velocities proportionally
+    const rng = () => 0.5;
+    const circular1x = createNBodyUniverse(rng, {
+      bodies: 5,
+      velocity_arrangement: "circular",
+      velocity_scale: 1.0,
+    });
+    const circular2x = createNBodyUniverse(rng, {
+      bodies: 5,
+      velocity_arrangement: "circular",
+      velocity_scale: 2.0,
+    });
+    const speed1x = Math.hypot(circular1x.planets[0].vx, circular1x.planets[0].vy);
+    const speed2x = Math.hypot(circular2x.planets[0].vx, circular2x.planets[0].vy);
+    expect(speed2x).toBeCloseTo(speed1x * 2, 5);
+
+    const inward = createNBodyUniverse(Math.random, {
+      bodies: 10,
+      velocity_arrangement: "inward",
+    });
+    // Inward motion: dot product of (x, y) and (vx, vy) should be negative
+    for (const p of inward.planets) {
+      const dot = p.x * p.vx + p.y * p.vy;
+      expect(dot).toBeLessThanOrEqual(0);
+    }
+
+    const outward = createNBodyUniverse(Math.random, {
+      bodies: 10,
+      velocity_arrangement: "outward",
+    });
+    // Outward motion: dot product of (x, y) and (vx, vy) should be positive
+    for (const p of outward.planets) {
+      const dot = p.x * p.vx + p.y * p.vy;
+      expect(dot).toBeGreaterThanOrEqual(0);
+    }
   });
 
   it("should create Galaxy Collision", () => {
