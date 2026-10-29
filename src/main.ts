@@ -1,5 +1,5 @@
 import createSolarSystem from "./universes/solar-system";
-import createGalaxyCollision from "./universes/galaxy-collision";
+import createGalaxyCollision, { GALAXY_HALO } from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
 import { Universe } from "./universe";
 import { get_local_storage, load_settings, save_settings } from "./settings";
@@ -10,6 +10,7 @@ type UniverseFactory = () => Universe;
 const universeFactories: Record<string, UniverseFactory> = {
   "solar-system": createSolarSystem,
   "galaxy-collision": createGalaxyCollision,
+  "galaxy-collision-halo": () => createGalaxyCollision(Math.random, GALAXY_HALO),
   "n-body-universe": createNBodyUniverse,
 };
 
