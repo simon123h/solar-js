@@ -1,3 +1,4 @@
+import { Encounter, place_encounter } from "../encounter";
 import { Planet } from "../planet";
 import { HaloSpec, PlanetSpec, Universe } from "../universe";
 import { Units } from "../units";
@@ -136,6 +137,11 @@ export interface GalaxyOptions {
   friction?: boolean;
   /** The number of stars in each galaxy; 3000 by default. */
   stars?: number;
+  /**
+   * How the galaxies approach each other, as a first closest approach and an eccentricity. If left out, they
+   * start from hand-picked velocities that make a fast, nearly head-on pass.
+   */
+  encounter?: Encounter;
 }
 
 /**
@@ -145,7 +151,7 @@ export interface GalaxyOptions {
  * @returns The created Universe instance configured with two colliding galaxies.
  */
 export default function createGalaxyCollision(random: () => number = Math.random, options: GalaxyOptions = {}): Universe {
-  const { halo = null, bulge_radius = 0, dispersion = 0.1, spins = [1, 1], friction = false, stars = 3000 } = options;
+  const { halo = null, bulge_radius = 0, dispersion = 0.1, spins = [1, 1], friction = false, stars = 3000, encounter } = options;
   const universe = new Universe();
   universe.random = random;
   universe.units = GALAXY_UNITS;
@@ -189,6 +195,8 @@ export default function createGalaxyCollision(random: () => number = Math.random
     // before the stars are placed, so that their orbital speeds include the halo
     for (const galaxy of [mw, ag]) universe.add_halo(galaxy, halo.v0, halo.core_radius, halo.truncation_radius, friction);
   }
+
+  if (encounter) place_encounter(universe, mw, ag, encounter);
 
   /** Adds a star on an orbit inside a spiral arm of the galaxy, with some random motion. */
   const add_star = (spec: PlanetSpec, radius: number, galaxy: Planet, spin: number): void => {
