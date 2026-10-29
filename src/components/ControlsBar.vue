@@ -62,6 +62,7 @@ const emit = defineEmits<{
           <option value="galaxy-collision">Galaxy Collision</option>
           <option value="n-body-universe">N-Body Problem</option>
           <option value="cosmic-web">Cosmic Web (Structure Formation)</option>
+          <option value="binary-galaxy">Binary Black Hole Galaxy</option>
         </select>
       </div>
       <button

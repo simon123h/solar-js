@@ -6,10 +6,12 @@ import GalaxySettingsPanel from "./components/GalaxySettingsPanel.vue";
 import SolarSettingsPanel from "./components/SolarSettingsPanel.vue";
 import NBodySettingsPanel from "./components/NBodySettingsPanel.vue";
 import CosmicWebSettingsPanel from "./components/CosmicWebSettingsPanel.vue";
+import BinaryGalaxySettingsPanel from "./components/BinaryGalaxySettingsPanel.vue";
 import { GalaxySettings } from "./galaxy-settings";
 import { SolarSystemSettings } from "./solar-settings";
 import { NBodySettings } from "./n-body-settings";
 import { CosmicWebSettings } from "./cosmic-web-settings";
+import { BinaryGalaxySettings } from "./binary-galaxy-settings";
 
 const props = defineProps<{
   initialUniverse: string;
@@ -18,6 +20,7 @@ const props = defineProps<{
   initialSolar: SolarSystemSettings;
   initialNBody: NBodySettings;
   initialCosmic: CosmicWebSettings;
+  initialBinary: BinaryGalaxySettings;
   initialStats: string;
 }>();
 
@@ -30,6 +33,7 @@ const emit = defineEmits<{
   (e: "update-solar", settings: SolarSystemSettings): void;
   (e: "update-nbody", settings: NBodySettings): void;
   (e: "update-cosmic", settings: CosmicWebSettings): void;
+  (e: "update-binary", settings: BinaryGalaxySettings): void;
 }>();
 
 const universe = ref(props.initialUniverse);
@@ -42,6 +46,7 @@ const galaxySettings = ref<GalaxySettings>({ ...props.initialGalaxy });
 const solarSettings = ref<SolarSystemSettings>({ ...props.initialSolar });
 const nBodySettings = ref<NBodySettings>({ ...props.initialNBody });
 const cosmicSettings = ref<CosmicWebSettings>({ ...props.initialCosmic });
+const binarySettings = ref<BinaryGalaxySettings>({ ...props.initialBinary });
 
 const galaxyMessage = ref("");
 
@@ -88,6 +93,11 @@ function onUpdateCosmic(next: CosmicWebSettings) {
   emit("update-cosmic", next);
 }
 
+function onUpdateBinary(next: BinaryGalaxySettings) {
+  binarySettings.value = next;
+  emit("update-binary", next);
+}
+
 // Expose methods to main.ts for high-performance updates without triggering heavy renders
 defineExpose({
   updateStats(text: string) {
@@ -107,6 +117,7 @@ defineExpose({
       solar: solarSettings.value,
       nbody: nBodySettings.value,
       cosmic: cosmicSettings.value,
+      binary: binarySettings.value,
     };
   },
 });
@@ -148,6 +159,11 @@ defineExpose({
       v-else-if="universe === 'cosmic-web'"
       :model-value="cosmicSettings"
       @update:model-value="onUpdateCosmic"
+    />
+    <BinaryGalaxySettingsPanel
+      v-else-if="universe === 'binary-galaxy'"
+      :model-value="binarySettings"
+      @update:model-value="onUpdateBinary"
     />
   </template>
 </template>

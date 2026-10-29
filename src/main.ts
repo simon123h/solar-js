@@ -4,6 +4,7 @@ import createSolarSystem from "./universes/solar-system";
 import createGalaxyCollision from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
 import createCosmicWeb from "./universes/cosmic-web";
+import createBinaryGalaxy from "./universes/binary-galaxy";
 import { Planet } from "./planet";
 import { Universe } from "./universe";
 import { format_time, scale_bar } from "./units";
@@ -12,6 +13,7 @@ import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, encounter_problem, galaxy_opti
 import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, solar_options } from "./solar-settings";
 import { DEFAULT_N_BODY_SETTINGS, NBodySettings, n_body_options } from "./n-body-settings";
 import { DEFAULT_COSMIC_WEB_SETTINGS, CosmicWebSettings, cosmic_web_options } from "./cosmic-web-settings";
+import { DEFAULT_BINARY_GALAXY_SETTINGS, BinaryGalaxySettings, binary_galaxy_options } from "./binary-galaxy-settings";
 
 type UniverseFactory = () => Universe;
 
@@ -21,6 +23,7 @@ let galaxy_settings: GalaxySettings = DEFAULT_GALAXY_SETTINGS;
 let solar_settings: SolarSystemSettings = DEFAULT_SOLAR_SETTINGS;
 let n_body_settings: NBodySettings = DEFAULT_N_BODY_SETTINGS;
 let cosmic_settings: CosmicWebSettings = DEFAULT_COSMIC_WEB_SETTINGS;
+let binary_settings: BinaryGalaxySettings = DEFAULT_BINARY_GALAXY_SETTINGS;
 
 /** Dictionary of universe factory functions. */
 const universeFactories: Record<string, UniverseFactory> = {
@@ -28,6 +31,7 @@ const universeFactories: Record<string, UniverseFactory> = {
   "galaxy-collision": () => createGalaxyCollision(Math.random, galaxy_options(galaxy_settings)),
   "n-body-universe": () => createNBodyUniverse(Math.random, n_body_options(n_body_settings)),
   "cosmic-web": () => createCosmicWeb(Math.random, cosmic_web_options(cosmic_settings)),
+  "binary-galaxy": () => createBinaryGalaxy(Math.random, binary_galaxy_options(binary_settings)),
 };
 
 /** Current active universe instance. */
@@ -80,7 +84,7 @@ function init(): void {
   canvas = document.getElementById("canvas") as HTMLCanvasElement;
   ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-  const validUniverses = ["solar-system", "galaxy-collision", "n-body-universe", "cosmic-web"];
+  const validUniverses = ["solar-system", "galaxy-collision", "n-body-universe", "cosmic-web", "binary-galaxy"];
   const validSpeeds = [0.25, 0.5, 1, 2, 4];
 
   // restore the saved settings
@@ -96,6 +100,7 @@ function init(): void {
   solar_settings = settings.solar;
   n_body_settings = settings.nbody;
   cosmic_settings = settings.cosmic;
+  binary_settings = settings.binary;
 
   const save = () =>
     save_settings(storage, {
@@ -105,6 +110,7 @@ function init(): void {
       solar: solar_settings,
       nbody: n_body_settings,
       cosmic: cosmic_settings,
+      binary: binary_settings,
     });
 
   // Mount Vue Application overlay
@@ -115,6 +121,7 @@ function init(): void {
     initialSolar: solar_settings,
     initialNBody: n_body_settings,
     initialCosmic: cosmic_settings,
+    initialBinary: binary_settings,
     initialStats: "loading...",
     onChangeUniverse(nextUniverse: string) {
       currentUniverseKey = nextUniverse;
@@ -165,6 +172,11 @@ function init(): void {
     },
     onUpdateCosmic(next: CosmicWebSettings) {
       cosmic_settings = next;
+      change_universe(currentUniverseKey);
+      save();
+    },
+    onUpdateBinary(next: BinaryGalaxySettings) {
+      binary_settings = next;
       change_universe(currentUniverseKey);
       save();
     },

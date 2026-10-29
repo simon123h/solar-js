@@ -11,6 +11,7 @@ import createGalaxyCollision, {
 } from "../src/universes/galaxy-collision";
 import createNBodyUniverse from "../src/universes/n-body-universe";
 import createCosmicWeb, { COSMIC_WEB_UNITS } from "../src/universes/cosmic-web";
+import createBinaryGalaxy from "../src/universes/binary-galaxy";
 import { seeded_random } from "../src/random";
 import { Universe } from "../src/universe";
 import { Planet } from "../src/planet";
@@ -538,11 +539,26 @@ describe("Universe Factories", () => {
     expect(universe.planets.every((p) => !p.is_dummy)).toBe(true);
   });
 
+  it("should create Binary Black Hole Galaxy universe", () => {
+    const universe = createBinaryGalaxy(seeded_random(1), {
+      separation_kpc: 2.0,
+      mass_ratio: 0.6,
+      stars: 50,
+      halo: true,
+    });
+    const nonDummies = universe.planets.filter((p) => !p.is_dummy);
+    expect(nonDummies).toHaveLength(3); // Primary BH, Secondary BH, and Solar System
+    expect(universe.get_planet_by_name("Primary Black Hole")).toBeDefined();
+    expect(universe.get_planet_by_name("Secondary Black Hole")).toBeDefined();
+    expect(universe.planets).toHaveLength(52); // 2 BHs + 50 stars
+  });
+
   it.each([
     ["Solar System", createSolarSystem],
     ["Galaxy Collision", createGalaxyCollision],
     ["N-Body Universe", createNBodyUniverse],
     ["Cosmic Web", createCosmicWeb],
+    ["Binary Black Hole Galaxy", createBinaryGalaxy],
   ])("should create the same %s from the same seed", (_name, create) => {
     const state = (random: () => number) => create(random).planets.map((p) => [p.x, p.y, p.vx, p.vy]);
     expect(state(seeded_random(1))).toEqual(state(seeded_random(1)));
