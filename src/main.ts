@@ -1,5 +1,5 @@
 import createSolarSystem from "./universes/solar-system";
-import createGalaxyCollision, { GALAXY_BULGE_RADIUS, GALAXY_HALO } from "./universes/galaxy-collision";
+import createGalaxyCollision, { GALAXY_BULGE_RADIUS, GALAXY_ENCOUNTER, GALAXY_HALO } from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
 import { Planet } from "./planet";
 import { Universe } from "./universe";
@@ -14,9 +14,20 @@ const universeFactories: Record<string, UniverseFactory> = {
   "galaxy-collision": createGalaxyCollision,
   "galaxy-collision-halo": () => createGalaxyCollision(Math.random, { halo: GALAXY_HALO }),
   "galaxy-collision-realistic": () =>
-    createGalaxyCollision(Math.random, { halo: GALAXY_HALO, bulge_radius: GALAXY_BULGE_RADIUS, friction: true }),
+    createGalaxyCollision(Math.random, {
+      halo: GALAXY_HALO,
+      bulge_radius: GALAXY_BULGE_RADIUS,
+      friction: true,
+      encounter: GALAXY_ENCOUNTER,
+    }),
   "galaxy-collision-retrograde": () =>
-    createGalaxyCollision(Math.random, { halo: GALAXY_HALO, bulge_radius: GALAXY_BULGE_RADIUS, spins: [-1, -1], friction: true }),
+    createGalaxyCollision(Math.random, {
+      halo: GALAXY_HALO,
+      bulge_radius: GALAXY_BULGE_RADIUS,
+      spins: [-1, -1],
+      friction: true,
+      encounter: GALAXY_ENCOUNTER,
+    }),
   "n-body-universe": createNBodyUniverse,
 };
 

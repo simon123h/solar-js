@@ -116,6 +116,16 @@ export const GALAXY_UNITS: Units = (() => {
   };
 })();
 
+/**
+ * The encounter of the variants with friction. The first pass is wide, about the size of the disks, so the
+ * galaxies pull long tails out of each other, and friction then brings them back for a second pass and a merger
+ * about a billion years later.
+ */
+export const GALAXY_ENCOUNTER: Encounter = {
+  pericenter: 130e9,
+  eccentricity: 1,
+};
+
 /** Optional features of the galaxy collision. */
 export interface GalaxyOptions {
   /** If given, both galaxies get a dark matter halo with these parameters; none by default. */

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import createSolarSystem from "../src/universes/solar-system";
 import createGalaxyCollision, {
   GALAXY_BULGE_RADIUS,
+  GALAXY_ENCOUNTER,
   GALAXY_HALO,
   GALAXY_UNITS,
   add_velocity_dispersion,
@@ -100,6 +101,34 @@ describe("Universe Factories", () => {
       // without the accounting the energy would seem to have collapsed; with it, it has not drifted much
       expect(Math.abs(universe.total_energy() - initial_energy) / Math.abs(initial_energy)).toBeGreaterThan(5);
       expect(Math.abs(universe.total_energy() + removed - initial_energy) / Math.abs(initial_energy)).toBeLessThan(0.15);
+    });
+  });
+
+  describe("the merger preset", () => {
+    it("should pass twice at a wide distance and then merge", () => {
+      const universe = createGalaxyCollision(seeded_random(1), {
+        halo: GALAXY_HALO,
+        bulge_radius: GALAXY_BULGE_RADIUS,
+        friction: true,
+        encounter: GALAXY_ENCOUNTER,
+        stars: 0,
+      });
+      const [mw, ag] = universe.planets;
+      let previous = 600e9;
+      let before_previous = 600e9;
+      const pericenters: number[] = [];
+      while (universe.physics.time < 800 * 86400) {
+        universe.integration_step();
+        const distance = Math.hypot(mw.x - ag.x, mw.y - ag.y);
+        if (previous < before_previous && previous < distance) pericenters.push(previous);
+        before_previous = previous;
+        previous = distance;
+      }
+      // two wide passes, as far apart as the disks are large, and then a plunge into a merger
+      expect(pericenters[0] / GALAXY_ENCOUNTER.pericenter).toBeCloseTo(1, 1);
+      expect(pericenters[1]).toBeGreaterThan(0.7 * GALAXY_ENCOUNTER.pericenter);
+      expect(pericenters[2]).toBeLessThan(0.1 * GALAXY_ENCOUNTER.pericenter);
+      expect(previous).toBeLessThan(0.1 * GALAXY_ENCOUNTER.pericenter);
     });
   });
 
