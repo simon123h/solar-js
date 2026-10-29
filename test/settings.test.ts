@@ -1,7 +1,16 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { SETTINGS_KEY, SettingsStorage, get_local_storage, load_settings, save_settings } from "../src/settings";
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_KEY,
+  Settings,
+  SettingsStorage,
+  get_local_storage,
+  load_settings,
+  save_settings,
+} from "../src/settings";
+import { DEFAULT_GALAXY_SETTINGS, GALAXY_PRESETS } from "../src/galaxy-settings";
 
-const defaults = { universe: "solar-system", speed: 1 };
+const defaults: Settings = DEFAULT_SETTINGS;
 const is_valid = {
   universe: (value: string) => ["solar-system", "galaxy-collision"].includes(value),
   speed: (value: number) => [0.5, 1, 2].includes(value),
@@ -21,8 +30,9 @@ function fake_storage(initial: Record<string, string> = {}): SettingsStorage & {
 describe("settings", () => {
   it("should round-trip saved settings", () => {
     const storage = fake_storage();
-    save_settings(storage, { universe: "galaxy-collision", speed: 2 });
-    expect(load_settings(storage, defaults, is_valid)).toEqual({ universe: "galaxy-collision", speed: 2 });
+    const merger = GALAXY_PRESETS[2].settings;
+    save_settings(storage, { universe: "galaxy-collision", speed: 2, galaxy: merger });
+    expect(load_settings(storage, defaults, is_valid)).toEqual({ universe: "galaxy-collision", speed: 2, galaxy: merger });
   });
 
   it("should use the defaults when nothing is saved or there is no storage", () => {
@@ -41,9 +51,59 @@ describe("settings", () => {
     expect(load_settings(fake_storage({ [SETTINGS_KEY]: saved }), defaults, is_valid)).toEqual({
       universe: "solar-system",
       speed: 2,
+      galaxy: DEFAULT_GALAXY_SETTINGS,
     });
     const wrong_types = JSON.stringify({ universe: 5, speed: "2" });
     expect(load_settings(fake_storage({ [SETTINGS_KEY]: wrong_types }), defaults, is_valid)).toEqual(defaults);
+  });
+
+  describe("the galaxy collision settings", () => {
+    const load = (saved: unknown, valid = is_valid) =>
+      load_settings(fake_storage({ [SETTINGS_KEY]: JSON.stringify(saved) }), defaults, valid);
+
+    it("should keep the galaxy settings while another universe is shown", () => {
+      const retrograde = GALAXY_PRESETS[3].settings;
+      const loaded = load({ universe: "solar-system", speed: 1, galaxy: retrograde });
+      expect(loaded.universe).toBe("solar-system");
+      expect(loaded.galaxy).toEqual(retrograde);
+    });
+
+    it("should use the defaults for galaxy settings that are missing or damaged, part by part", () => {
+      expect(load({ universe: "galaxy-collision", speed: 1 }).galaxy).toEqual(DEFAULT_GALAXY_SETTINGS);
+      expect(load({ galaxy: "nonsense" }).galaxy).toEqual(DEFAULT_GALAXY_SETTINGS);
+      const partly = load({ galaxy: { halo: true, stars: "many", spins: [-1, 7] } }).galaxy;
+      expect(partly).toEqual({ ...DEFAULT_GALAXY_SETTINGS, halo: true, spins: [-1, 1] });
+    });
+
+    it.each([
+      ["galaxy-collision-halo", 1],
+      ["galaxy-collision-realistic", 2],
+      ["galaxy-collision-retrograde", 3],
+    ])("should turn the old universe %s into the merged one with the matching settings", (old_name, preset_index) => {
+      const loaded = load({ universe: old_name, speed: 2 });
+      expect(loaded.universe).toBe("galaxy-collision");
+      expect(loaded.galaxy).toEqual(GALAXY_PRESETS[preset_index].settings);
+      expect(loaded.speed).toBe(2);
+    });
+
+    it("should prefer galaxy settings that were saved together with an old universe name", () => {
+      const loaded = load({ universe: "galaxy-collision-halo", galaxy: GALAXY_PRESETS[3].settings });
+      expect(loaded.galaxy).toEqual(GALAXY_PRESETS[3].settings);
+    });
+
+    it("should not choose the merged universe if it no longer exists, but still keep the settings", () => {
+      const loaded = load({ universe: "galaxy-collision-halo" }, { ...is_valid, universe: (value) => value === "solar-system" });
+      expect(loaded.universe).toBe("solar-system");
+      expect(loaded.galaxy).toEqual(GALAXY_PRESETS[1].settings);
+    });
+
+    it("should not mistake the names of object properties for old universes", () => {
+      for (const name of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+        const loaded = load({ universe: name });
+        expect(loaded.universe).toBe("solar-system");
+        expect(loaded.galaxy).toEqual(DEFAULT_GALAXY_SETTINGS);
+      }
+    });
   });
 
   it("should survive storage that throws", () => {

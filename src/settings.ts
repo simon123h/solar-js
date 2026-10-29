@@ -1,8 +1,15 @@
+import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, LEGACY_GALAXY_UNIVERSES, normalize_galaxy_settings } from "./galaxy-settings";
+
 /** The control pane settings that persist between visits. */
 export interface Settings {
   universe: string;
   speed: number;
+  /** The settings of the galaxy collision, which are kept even while another universe is shown. */
+  galaxy: GalaxySettings;
 }
+
+/** The settings to start with, before anything has been saved. */
+export const DEFAULT_SETTINGS: Settings = { universe: "solar-system", speed: 1, galaxy: DEFAULT_GALAXY_SETTINGS };
 
 /** The part of the Storage interface the settings need. */
 export type SettingsStorage = Pick<Storage, "getItem" | "setItem">;
@@ -22,7 +29,9 @@ export function get_local_storage(): SettingsStorage | null {
 }
 
 /**
- * Loads the saved settings. Anything missing, corrupt or no longer valid falls back to the defaults.
+ * Loads the saved settings. Anything missing, corrupt or no longer valid falls back to the defaults. The galaxy
+ * collision used to be several universes; if one of those was saved, the merged universe is chosen with the
+ * settings that reproduce it.
  * @param storage - Where the settings are stored, or null if there is no storage.
  * @param defaults - The settings to use for everything that was not saved.
  * @param is_valid - Checks a loaded value, so options that no longer exist are ignored.
@@ -36,8 +45,15 @@ export function load_settings(
   const settings = { ...defaults };
   try {
     const saved = JSON.parse(storage?.getItem(SETTINGS_KEY) ?? "null");
-    if (typeof saved?.universe === "string" && is_valid.universe(saved.universe)) settings.universe = saved.universe;
+    const legacy = typeof saved?.universe === "string" && Object.prototype.hasOwnProperty.call(LEGACY_GALAXY_UNIVERSES, saved.universe);
+    if (legacy) {
+      if (is_valid.universe("galaxy-collision")) settings.universe = "galaxy-collision";
+      settings.galaxy = LEGACY_GALAXY_UNIVERSES[saved.universe];
+    } else if (typeof saved?.universe === "string" && is_valid.universe(saved.universe)) {
+      settings.universe = saved.universe;
+    }
     if (typeof saved?.speed === "number" && is_valid.speed(saved.speed)) settings.speed = saved.speed;
+    if (saved?.galaxy !== undefined) settings.galaxy = normalize_galaxy_settings(saved.galaxy);
   } catch {
     // unreadable storage or corrupt JSON: keep the defaults
   }

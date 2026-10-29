@@ -4,7 +4,7 @@ import createNBodyUniverse from "./universes/n-body-universe";
 import { Planet } from "./planet";
 import { Universe } from "./universe";
 import { format_time, scale_bar } from "./units";
-import { get_local_storage, load_settings, save_settings } from "./settings";
+import { DEFAULT_SETTINGS, get_local_storage, load_settings, save_settings } from "./settings";
 
 type UniverseFactory = () => Universe;
 
@@ -85,19 +85,15 @@ function init(): void {
   // restore the saved settings; the select options define which values are valid
   const storage = get_local_storage();
   const options = (select: HTMLSelectElement) => Array.from(select.options, (o) => o.value);
-  const settings = load_settings(
-    storage,
-    { universe: "solar-system", speed: 1 },
-    {
-      universe: (value) => options(universeSelect).includes(value) && value in universeFactories,
-      speed: (value) => options(speedSelect).includes(String(value)),
-    },
-  );
+  const settings = load_settings(storage, DEFAULT_SETTINGS, {
+    universe: (value) => options(universeSelect).includes(value) && value in universeFactories,
+    speed: (value) => options(speedSelect).includes(String(value)),
+  });
   universeSelect.value = settings.universe;
   speedSelect.value = String(settings.speed);
   loop.speed = settings.speed;
 
-  const save = () => save_settings(storage, { universe: universeSelect.value, speed: loop.speed });
+  const save = () => save_settings(storage, { universe: universeSelect.value, speed: loop.speed, galaxy: settings.galaxy });
 
   universeSelect.addEventListener("change", (e: Event) => {
     change_universe(e.target as HTMLSelectElement);
