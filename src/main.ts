@@ -3,6 +3,7 @@ import App from "./App.vue";
 import createSolarSystem from "./universes/solar-system";
 import createGalaxyCollision from "./universes/galaxy-collision";
 import createNBodyUniverse from "./universes/n-body-universe";
+import createCosmicWeb from "./universes/cosmic-web";
 import { Planet } from "./planet";
 import { Universe } from "./universe";
 import { format_time, scale_bar } from "./units";
@@ -10,6 +11,7 @@ import { DEFAULT_SETTINGS, get_local_storage, load_settings, save_settings } fro
 import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, encounter_problem, galaxy_options } from "./galaxy-settings";
 import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, solar_options } from "./solar-settings";
 import { DEFAULT_N_BODY_SETTINGS, NBodySettings, n_body_options } from "./n-body-settings";
+import { DEFAULT_COSMIC_WEB_SETTINGS, CosmicWebSettings, cosmic_web_options } from "./cosmic-web-settings";
 
 type UniverseFactory = () => Universe;
 
@@ -18,12 +20,14 @@ let currentUniverseKey = "solar-system";
 let galaxy_settings: GalaxySettings = DEFAULT_GALAXY_SETTINGS;
 let solar_settings: SolarSystemSettings = DEFAULT_SOLAR_SETTINGS;
 let n_body_settings: NBodySettings = DEFAULT_N_BODY_SETTINGS;
+let cosmic_settings: CosmicWebSettings = DEFAULT_COSMIC_WEB_SETTINGS;
 
 /** Dictionary of universe factory functions. */
 const universeFactories: Record<string, UniverseFactory> = {
   "solar-system": () => createSolarSystem(Math.random, solar_options(solar_settings)),
   "galaxy-collision": () => createGalaxyCollision(Math.random, galaxy_options(galaxy_settings)),
   "n-body-universe": () => createNBodyUniverse(Math.random, n_body_options(n_body_settings)),
+  "cosmic-web": () => createCosmicWeb(Math.random, cosmic_web_options(cosmic_settings)),
 };
 
 /** Current active universe instance. */
@@ -76,7 +80,7 @@ function init(): void {
   canvas = document.getElementById("canvas") as HTMLCanvasElement;
   ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-  const validUniverses = ["solar-system", "galaxy-collision", "n-body-universe"];
+  const validUniverses = ["solar-system", "galaxy-collision", "n-body-universe", "cosmic-web"];
   const validSpeeds = [0.25, 0.5, 1, 2, 4];
 
   // restore the saved settings
@@ -91,6 +95,7 @@ function init(): void {
   galaxy_settings = settings.galaxy;
   solar_settings = settings.solar;
   n_body_settings = settings.nbody;
+  cosmic_settings = settings.cosmic;
 
   const save = () =>
     save_settings(storage, {
@@ -99,6 +104,7 @@ function init(): void {
       galaxy: galaxy_settings,
       solar: solar_settings,
       nbody: n_body_settings,
+      cosmic: cosmic_settings,
     });
 
   // Mount Vue Application overlay
@@ -108,6 +114,7 @@ function init(): void {
     initialGalaxy: galaxy_settings,
     initialSolar: solar_settings,
     initialNBody: n_body_settings,
+    initialCosmic: cosmic_settings,
     initialStats: "loading...",
     onChangeUniverse(nextUniverse: string) {
       currentUniverseKey = nextUniverse;
@@ -153,6 +160,11 @@ function init(): void {
     },
     onUpdateNbody(next: NBodySettings) {
       n_body_settings = next;
+      change_universe(currentUniverseKey);
+      save();
+    },
+    onUpdateCosmic(next: CosmicWebSettings) {
+      cosmic_settings = next;
       change_universe(currentUniverseKey);
       save();
     },

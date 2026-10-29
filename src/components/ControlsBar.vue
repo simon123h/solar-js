@@ -61,6 +61,7 @@ const emit = defineEmits<{
           <option value="solar-system">Solar System</option>
           <option value="galaxy-collision">Galaxy Collision</option>
           <option value="n-body-universe">N-Body Problem</option>
+          <option value="cosmic-web">Cosmic Web (Structure Formation)</option>
         </select>
       </div>
       <button

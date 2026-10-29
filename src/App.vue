@@ -5,9 +5,11 @@ import ControlsBar from "./components/ControlsBar.vue";
 import GalaxySettingsPanel from "./components/GalaxySettingsPanel.vue";
 import SolarSettingsPanel from "./components/SolarSettingsPanel.vue";
 import NBodySettingsPanel from "./components/NBodySettingsPanel.vue";
+import CosmicWebSettingsPanel from "./components/CosmicWebSettingsPanel.vue";
 import { GalaxySettings } from "./galaxy-settings";
 import { SolarSystemSettings } from "./solar-settings";
 import { NBodySettings } from "./n-body-settings";
+import { CosmicWebSettings } from "./cosmic-web-settings";
 
 const props = defineProps<{
   initialUniverse: string;
@@ -15,6 +17,7 @@ const props = defineProps<{
   initialGalaxy: GalaxySettings;
   initialSolar: SolarSystemSettings;
   initialNBody: NBodySettings;
+  initialCosmic: CosmicWebSettings;
   initialStats: string;
 }>();
 
@@ -26,6 +29,7 @@ const emit = defineEmits<{
   (e: "update-galaxy", settings: GalaxySettings): void;
   (e: "update-solar", settings: SolarSystemSettings): void;
   (e: "update-nbody", settings: NBodySettings): void;
+  (e: "update-cosmic", settings: CosmicWebSettings): void;
 }>();
 
 const universe = ref(props.initialUniverse);
@@ -37,6 +41,7 @@ const statsText = ref(props.initialStats);
 const galaxySettings = ref<GalaxySettings>({ ...props.initialGalaxy });
 const solarSettings = ref<SolarSystemSettings>({ ...props.initialSolar });
 const nBodySettings = ref<NBodySettings>({ ...props.initialNBody });
+const cosmicSettings = ref<CosmicWebSettings>({ ...props.initialCosmic });
 
 const galaxyMessage = ref("");
 
@@ -78,6 +83,11 @@ function onUpdateNBody(next: NBodySettings) {
   emit("update-nbody", next);
 }
 
+function onUpdateCosmic(next: CosmicWebSettings) {
+  cosmicSettings.value = next;
+  emit("update-cosmic", next);
+}
+
 // Expose methods to main.ts for high-performance updates without triggering heavy renders
 defineExpose({
   updateStats(text: string) {
@@ -96,6 +106,7 @@ defineExpose({
       galaxy: galaxySettings.value,
       solar: solarSettings.value,
       nbody: nBodySettings.value,
+      cosmic: cosmicSettings.value,
     };
   },
 });
@@ -132,6 +143,11 @@ defineExpose({
       v-else-if="universe === 'n-body-universe'"
       :model-value="nBodySettings"
       @update:model-value="onUpdateNBody"
+    />
+    <CosmicWebSettingsPanel
+      v-else-if="universe === 'cosmic-web'"
+      :model-value="cosmicSettings"
+      @update:model-value="onUpdateCosmic"
     />
   </template>
 </template>

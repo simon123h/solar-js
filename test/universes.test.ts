@@ -10,6 +10,7 @@ import createGalaxyCollision, {
   spiral_angle,
 } from "../src/universes/galaxy-collision";
 import createNBodyUniverse from "../src/universes/n-body-universe";
+import createCosmicWeb, { COSMIC_WEB_UNITS } from "../src/universes/cosmic-web";
 import { seeded_random } from "../src/random";
 import { Universe } from "../src/universe";
 import { Planet } from "../src/planet";
@@ -524,10 +525,24 @@ describe("Universe Factories", () => {
     expect(universe.planets.length).toBeGreaterThan(0);
   });
 
+  it("should create Cosmic Web universe with configured particle grid and units", () => {
+    const universe = createCosmicWeb(seeded_random(1), {
+      particles: 100,
+      roughness: 4,
+      perturbation_amplitude: 0.3,
+      expansion: 0.1,
+    });
+    // 10x10 = 100 particles
+    expect(universe.planets).toHaveLength(100);
+    expect(universe.units).toEqual(COSMIC_WEB_UNITS);
+    expect(universe.planets.every((p) => !p.is_dummy)).toBe(true);
+  });
+
   it.each([
     ["Solar System", createSolarSystem],
     ["Galaxy Collision", createGalaxyCollision],
     ["N-Body Universe", createNBodyUniverse],
+    ["Cosmic Web", createCosmicWeb],
   ])("should create the same %s from the same seed", (_name, create) => {
     const state = (random: () => number) => create(random).planets.map((p) => [p.x, p.y, p.vx, p.vy]);
     expect(state(seeded_random(1))).toEqual(state(seeded_random(1)));
