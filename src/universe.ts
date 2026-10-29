@@ -1,3 +1,4 @@
+import { coulomb_logarithm, friction_factor } from "./friction";
 import { Planet } from "./planet";
 import { Units } from "./units";
 
@@ -37,6 +38,8 @@ export interface Halo {
   v0: number;
   core_radius: number;
   truncation_radius: number;
+  /** If set, bodies moving through the halo are slowed by dynamical friction. */
+  friction?: boolean;
 }
 
 /** The parameters of a halo, without the planet it is centered on. */
@@ -49,6 +52,27 @@ function halo_acceleration_factor(halo: Halo, d2: number): number {
   const rc2 = halo.core_radius * halo.core_radius;
   const rt2 = halo.truncation_radius * halo.truncation_radius;
   return (halo.v0 * halo.v0 * rt2) / ((d2 + rc2) * (d2 + rt2));
+}
+
+/**
+ * The mass density of a halo at squared distance d2 from its center, from the mass inside each radius, which
+ * follows from its acceleration: M(r) = a(r) r^2 / G. Beyond the radius where the truncated halo's enclosed mass
+ * peaks the formula would turn negative, so the density is zero there.
+ */
+export function halo_density(halo: Halo, d2: number, G: number): number {
+  const rc2 = halo.core_radius * halo.core_radius;
+  const rt2 = halo.truncation_radius * halo.truncation_radius;
+  const denominator = (d2 + rc2) * (d2 + rt2);
+  const slope = 3 * denominator - 2 * d2 * (2 * d2 + rt2 + rc2);
+  return Math.max(0, (halo.v0 * halo.v0 * rt2 * slope) / (4 * Math.PI * G * denominator * denominator));
+}
+
+/**
+ * The mass of a halo inside its truncation radius, where the enclosed mass is largest.
+ */
+function halo_mass(halo: Halo, G: number): number {
+  const rt2 = halo.truncation_radius * halo.truncation_radius;
+  return (halo_acceleration_factor(halo, rt2) * rt2 * halo.truncation_radius) / G;
 }
 
 /**
@@ -137,14 +161,15 @@ export class Universe {
    * @param v0 - The circular speed of the flat rotation curve.
    * @param core_radius - The radius of the halo's core, inside which the rotation speed rises.
    * @param truncation_radius - The radius beyond which the halo's pull fades out; must exceed the core radius.
+   * @param friction - Whether bodies moving through the halo are slowed by dynamical friction.
    * @returns The created halo.
    * @throws If the radii are not positive or the truncation radius does not exceed the core radius.
    */
-  add_halo(center: Planet, v0: number, core_radius: number, truncation_radius: number): Halo {
+  add_halo(center: Planet, v0: number, core_radius: number, truncation_radius: number, friction: boolean = false): Halo {
     if (!(core_radius > 0) || !(truncation_radius > core_radius)) {
       throw new Error("add_halo: need 0 < core_radius < truncation_radius");
     }
-    const halo = { center, v0, core_radius, truncation_radius };
+    const halo: Halo = { center, v0, core_radius, truncation_radius, friction };
     this.halos.push(halo);
     return halo;
   }
@@ -237,6 +262,70 @@ export class Universe {
     angle -= (Math.PI / 2) * sign;
     planet.vx = centerOfMass.vx + velocity * Math.cos(angle);
     planet.vy = centerOfMass.vy + velocity * Math.sin(angle);
+  }
+
+  /**
+   * Adds the dynamical friction of a halo to the accelerations. Every regular planet moving through the halo is
+   * slowed along its velocity relative to the halo's center, and the center is pushed the other way, so that
+   * momentum is conserved. The friction acts on the planet together with the halo it carries, so a planet's mass
+   * for the friction includes the mass of its own halos.
+   * @param halo - The halo that causes the friction.
+   * @param order - The planets, regular ones first.
+   * @param center_index - The index of the halo's center in order.
+   * @param regular - The number of regular planets in order.
+   * @param x - The positions, in the order of order.
+   * @param y - The positions, in the order of order.
+   * @param ax - The accelerations to add to, in the order of order.
+   * @param ay - The accelerations to add to, in the order of order.
+   */
+  private apply_friction(
+    halo: Halo,
+    order: Planet[],
+    center_index: number,
+    regular: number,
+    x: Float64Array,
+    y: Float64Array,
+    ax: Float64Array,
+    ay: Float64Array,
+  ): void {
+    const G = this.physics.G;
+    const center = halo.center;
+    const sigma_factor = halo.v0; // sqrt(2) times the velocity dispersion of an isothermal halo
+    let reaction_x = 0;
+    let reaction_y = 0;
+    for (let i = 0; i < regular; i++) {
+      const planet = order[i];
+      if (planet === center) continue;
+      const vx = planet.vx - center.vx;
+      const vy = planet.vy - center.vy;
+      const speed = Math.hypot(vx, vy);
+      if (speed === 0) continue;
+
+      const dx = x[i] - x[center_index];
+      const dy = y[i] - y[center_index];
+      const d2 = dx * dx + dy * dy;
+      let mass = planet.mass;
+      for (const own of this.halos) if (own.center === planet) mass += halo_mass(own, G);
+      const b_max = Math.max(Math.sqrt(d2), halo.core_radius);
+      const deceleration =
+        (4 *
+          Math.PI *
+          G *
+          G *
+          mass *
+          halo_density(halo, d2, G) *
+          coulomb_logarithm(b_max, speed, G, mass) *
+          friction_factor(speed / sigma_factor)) /
+        (speed * speed);
+      ax[i] -= (deceleration * vx) / speed;
+      ay[i] -= (deceleration * vy) / speed;
+      reaction_x += (planet.mass * deceleration * vx) / speed;
+      reaction_y += (planet.mass * deceleration * vy) / speed;
+    }
+    if (center.mass > 0) {
+      ax[center_index] += reaction_x / center.mass;
+      ay[center_index] += reaction_y / center.mass;
+    }
   }
 
   /**
@@ -336,6 +425,8 @@ export class Universe {
         ax[ci] += reaction_x / center_mass;
         ay[ci] += reaction_y / center_mass;
       }
+
+      if (halo.friction) this.apply_friction(halo, order, ci, ndl, x, y, ax, ay);
     }
 
     for (let i = 0; i < n; i++) {

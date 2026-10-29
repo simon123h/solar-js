@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { Universe } from "../src/universe";
+import { Universe, halo_density } from "../src/universe";
+import { coulomb_logarithm, friction_factor } from "../src/friction";
 import { Planet } from "../src/planet";
 import { seeded_random } from "../src/random";
 
@@ -602,6 +603,183 @@ describe("Universe", () => {
       }
       // the orbit stays circular inside the bulge
       expect(Math.abs(Math.hypot(p.x - sun.x, p.y - sun.y) / 3e10 - 1)).toBeLessThan(1e-3);
+    });
+  });
+
+  describe("halo density", () => {
+    const halo = { center: new Planet("C", 1, 1), v0: 4e4, core_radius: 2e10, truncation_radius: 3e11 };
+    const G = 6.674e-11;
+
+    it("should be 3 v0^2 / (4 pi G rc^2) at the center", () => {
+      expect(halo_density(halo, 0, G) / ((3 * halo.v0 ** 2) / (4 * Math.PI * G * halo.core_radius ** 2))).toBeCloseTo(1, 12);
+    });
+
+    it("should integrate to the mass inside each radius, a(r) r^2 / G", () => {
+      for (const radius of [4e10, 1e11, 2e11]) {
+        const steps = 20000;
+        let mass = 0;
+        for (let i = 0; i < steps; i++) {
+          const r = ((i + 0.5) * radius) / steps;
+          mass += 4 * Math.PI * r * r * halo_density(halo, r * r, G) * (radius / steps);
+        }
+        const a =
+          (halo.v0 ** 2 * radius * halo.truncation_radius ** 2) /
+          ((radius ** 2 + halo.core_radius ** 2) * (radius ** 2 + halo.truncation_radius ** 2));
+        expect(mass / ((a * radius ** 2) / G)).toBeCloseTo(1, 4);
+      }
+    });
+
+    it("should never be negative, and vanish far outside the halo", () => {
+      for (let r = 1e8; r < 1e14; r *= 1.3) expect(halo_density(halo, r * r, G)).toBeGreaterThanOrEqual(0);
+      expect(halo_density(halo, 1e26, G)).toBe(0);
+    });
+  });
+
+  describe("dynamical friction", () => {
+    const v0 = 4e4;
+    const rc = 2e10;
+    const rt = 3e11;
+
+    /**
+     * A massive center with a bulge and a halo, and a body of the given mass moving through it, with or without
+     * friction. The bulge keeps the time step able to resolve passes through the center.
+     */
+    function createScene(
+      friction: boolean,
+      options: { speed?: number; body_mass?: number; center_velocity?: [number, number]; dummy?: boolean } = {},
+    ) {
+      const { speed = 3e4, body_mass = 1e30, center_velocity = [0, 0], dummy = false } = options;
+      const universe = new Universe();
+      const [center, body] = universe.generate_planets([
+        { name: "Center", mass: 2e30, radius: 1, core_radius: 3e10, vx: center_velocity[0], vy: center_velocity[1] },
+        { name: "Body", mass: body_mass, radius: 1, x: 1e11, vy: speed + center_velocity[1], vx: center_velocity[0], is_dummy: dummy },
+      ]);
+      universe.add_halo(center, v0, rc, rt, friction);
+      return { universe, center, body };
+    }
+
+    it("should be off unless asked for", () => {
+      expect(new Universe().add_halo(new Planet("C", 1, 1), v0, rc, rt).friction).toBe(false);
+      expect(new Universe().add_halo(new Planet("C", 1, 1), v0, rc, rt, true).friction).toBe(true);
+    });
+
+    it("should slow a body along its velocity relative to the halo, by Chandrasekhar's formula", () => {
+      const plain = createScene(false);
+      const with_friction = createScene(true);
+      plain.universe.update_forces();
+      with_friction.universe.update_forces();
+
+      const G = plain.universe.physics.G;
+      const speed = 3e4;
+      const halo = with_friction.universe.halos[0];
+      const expected =
+        (4 * Math.PI * G * G * 1e30 * halo_density(halo, 1e22, G) * coulomb_logarithm(1e11, speed, G, 1e30) * friction_factor(speed / v0)) /
+        (speed * speed);
+      // the body moves along +y, so friction pushes it along -y and leaves x alone
+      expect((with_friction.body.ay - plain.body.ay) / -expected).toBeCloseTo(1, 9);
+      expect(with_friction.body.ax).toBeCloseTo(plain.body.ax, 15);
+      expect(expected).toBeGreaterThan(0);
+    });
+
+    it("should conserve momentum by pushing the center the other way", () => {
+      const plain = createScene(false);
+      const with_friction = createScene(true);
+      plain.universe.update_forces();
+      with_friction.universe.update_forces();
+      const force_on_body = with_friction.body.mass * (with_friction.body.ay - plain.body.ay);
+      const force_on_center = with_friction.center.mass * (with_friction.center.ay - plain.center.ay);
+      expect(force_on_body).toBeLessThan(0);
+      expect(force_on_center / -force_on_body).toBeCloseTo(1, 12);
+    });
+
+    it("should not act without friction, at rest relative to the halo, or on dummy planets", () => {
+      const base = createScene(false);
+      base.universe.update_forces();
+      const accel = (scene: ReturnType<typeof createScene>) => {
+        scene.universe.update_forces();
+        return [scene.body.ax, scene.body.ay];
+      };
+      expect(accel(createScene(false))).toEqual([base.body.ax, base.body.ay]);
+      expect(accel(createScene(true, { dummy: true }))).toEqual(accel(createScene(false, { dummy: true })));
+      // the center and the body move together, so they are at rest relative to each other
+      const together = createScene(true, { speed: 0, center_velocity: [2e4, -1e4] });
+      expect(accel(together)).toEqual(accel(createScene(false, { speed: 0, center_velocity: [2e4, -1e4] })));
+    });
+
+    it("should use the velocity relative to the halo, not relative to the screen", () => {
+      const moving = createScene(true, { center_velocity: [5e4, 0] });
+      const still = createScene(true, { center_velocity: [0, 0] });
+      moving.universe.update_forces();
+      still.universe.update_forces();
+      const plain = createScene(false);
+      plain.universe.update_forces();
+      expect(moving.body.ay - plain.body.ay).toBeCloseTo(still.body.ay - plain.body.ay, 15);
+    });
+
+    it("should count the halos a body carries in its mass for the friction", () => {
+      const carrying = createScene(true);
+      carrying.universe.add_halo(carrying.body, v0, rc, rt);
+      const reference = createScene(false);
+      reference.universe.add_halo(reference.body, v0, rc, rt);
+      carrying.universe.update_forces();
+      reference.universe.update_forces();
+
+      const G = carrying.universe.physics.G;
+      const speed = 3e4;
+      const center_halo = carrying.universe.halos[0];
+      // the mass of a halo inside its truncation radius is a(rt) rt^2 / G
+      const rt2 = rt * rt;
+      const own_halo_mass = (((v0 * v0 * rt2) / ((rt2 + rc * rc) * (rt2 + rt2))) * rt * rt2) / G;
+      const mass = 1e30 + own_halo_mass;
+      const expected =
+        (4 *
+          Math.PI *
+          G *
+          G *
+          mass *
+          halo_density(center_halo, 1e22, G) *
+          coulomb_logarithm(1e11, speed, G, mass) *
+          friction_factor(speed / v0)) /
+        (speed * speed);
+      expect((carrying.body.ay - reference.body.ay) / -expected).toBeCloseTo(1, 9);
+      expect(own_halo_mass).toBeGreaterThan(1e30);
+    });
+
+    it("should still slow the body when the center has no mass", () => {
+      const massless = createScene(true);
+      massless.center.mass = 0;
+      const reference = createScene(false);
+      reference.center.mass = 0;
+      massless.universe.update_forces();
+      reference.universe.update_forces();
+      expect(Number.isFinite(massless.center.ay)).toBe(true);
+      expect(massless.body.ay).toBeLessThan(reference.body.ay);
+    });
+
+    it("should dissipate energy and relative speed while conserving momentum", () => {
+      const { universe, center, body } = createScene(true);
+      universe.physics.dt = 60 * 60 * 3;
+      const relative_speed = () => Math.hypot(body.vx - center.vx, body.vy - center.vy);
+      const momentum = () => [center.mass * center.vx + body.mass * body.vx, center.mass * center.vy + body.mass * body.vy];
+      const speed_before = relative_speed();
+      const energy_before = universe.total_energy();
+      const [px, py] = momentum();
+
+      const reference = createScene(false);
+      reference.universe.physics.dt = universe.physics.dt;
+      for (let i = 0; i < 3000; i++) {
+        universe.integration_step();
+        reference.universe.integration_step();
+      }
+
+      // the total energy falls with friction, but not without it
+      expect(universe.total_energy()).toBeLessThan(energy_before);
+      expect(Math.abs((reference.universe.total_energy() - energy_before) / energy_before)).toBeLessThan(1e-6);
+      expect(relative_speed()).not.toBeCloseTo(speed_before, 0);
+      // momentum is conserved exactly, which the halo pulls and the friction forces both respect
+      const [qx, qy] = momentum();
+      expect(Math.abs(qx - px) / Math.abs(py)).toBeLessThan(1e-6);
+      expect(Math.abs(qy - py) / Math.abs(py)).toBeLessThan(1e-6);
     });
   });
 
