@@ -4,7 +4,7 @@ import {
   BINARY_GALAXY_SEPARATION_RANGE,
   BINARY_GALAXY_STAR_COUNTS,
   BinaryGalaxySettings,
-} from "../binary-galaxy-settings";
+} from "./binary-galaxy-settings";
 
 const props = defineProps<{
   modelValue: BinaryGalaxySettings;
@@ -60,7 +60,7 @@ function update<K extends keyof BinaryGalaxySettings>(key: K, value: BinaryGalax
     </fieldset>
 
     <fieldset>
-      <legend>Galactic Disk</legend>
+      <legend>Galactic Disk & Physics</legend>
       <label class="row">
         <span>Stars</span>
         <select
@@ -80,6 +80,25 @@ function update<K extends keyof BinaryGalaxySettings>(key: K, value: BinaryGalax
           @change="update('halo', ($event.target as HTMLInputElement).checked)"
         />
         Dark matter halo
+      </label>
+
+      <label>
+        <input
+          type="checkbox"
+          :checked="modelValue.bulge"
+          @change="update('bulge', ($event.target as HTMLInputElement).checked)"
+        />
+        Extended bulge
+      </label>
+
+      <label>
+        <input
+          type="checkbox"
+          :checked="modelValue.friction"
+          :disabled="!modelValue.halo"
+          @change="update('friction', ($event.target as HTMLInputElement).checked)"
+        />
+        Dynamical friction in halo
       </label>
     </fieldset>
 

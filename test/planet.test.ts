@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Planet } from "../src/planet";
+import { Planet } from "../src/core/planet";
 
 describe("Planet", () => {
   it("should calculate velocity magnitude", () => {

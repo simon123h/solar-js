@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { seeded_random } from "../src/random";
+import { seeded_random } from "../src/core/random";
 
 describe("seeded_random", () => {
   it("should produce the same sequence for the same seed", () => {

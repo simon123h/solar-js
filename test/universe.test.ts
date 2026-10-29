@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { Universe, halo_density } from "../src/universe";
-import { coulomb_logarithm, friction_factor } from "../src/friction";
-import { Planet } from "../src/planet";
-import { seeded_random } from "../src/random";
+import { Universe, halo_density } from "../src/core/universe";
+import { coulomb_logarithm, friction_factor } from "../src/core/friction";
+import { Planet } from "../src/core/planet";
+import { seeded_random } from "../src/core/random";
 
 describe("Universe", () => {
   it("should initialize correctly", () => {

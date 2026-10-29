@@ -5,7 +5,7 @@ import {
   DEFAULT_BINARY_GALAXY_SETTINGS,
   binary_galaxy_options,
   normalize_binary_galaxy_settings,
-} from "../src/binary-galaxy-settings";
+} from "../src/scenarios/binary-galaxy";
 
 describe("binary-galaxy-settings", () => {
   it("should have sensible defaults", () => {
@@ -14,6 +14,8 @@ describe("binary-galaxy-settings", () => {
       mass_ratio: 0.8,
       stars: 3000,
       halo: true,
+      bulge: false,
+      friction: false,
     });
   });
 
@@ -28,13 +30,17 @@ describe("binary-galaxy-settings", () => {
         separation_kpc: 8.0,
         mass_ratio: 0.5,
         stars: 2000,
-        halo: false,
+        halo: true,
+        bulge: true,
+        friction: true,
       }),
     ).toEqual({
       separation_kpc: 8.0,
       mass_ratio: 0.5,
       stars: 2000,
-      halo: false,
+      halo: true,
+      bulge: true,
+      friction: true,
     });
   });
 
@@ -56,12 +62,17 @@ describe("binary-galaxy-settings", () => {
       mass_ratio: 0.9,
       stars: 1000,
       halo: true,
+      bulge: true,
+      friction: true,
     });
     expect(opts).toEqual({
       separation_kpc: 6.0,
       mass_ratio: 0.9,
       stars: 1000,
       halo: true,
+      bulge: true,
+      bulge_radius: 3e9,
+      friction: true,
     });
   });
 });

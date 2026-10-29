@@ -5,7 +5,7 @@ import {
   COSMIC_WEB_AMPLITUDE_RANGE,
   COSMIC_WEB_EXPANSION_RANGE,
   CosmicWebSettings,
-} from "../cosmic-web-settings";
+} from "./cosmic-web-settings";
 
 const props = defineProps<{
   modelValue: CosmicWebSettings;

@@ -1,5 +1,5 @@
-import { Universe, PlanetSpec } from "../universe";
-import { DEFAULT_SOLAR_SETTINGS, SolarSystemOptions } from "../solar-settings";
+import { Universe, PlanetSpec } from "../../core/universe";
+import { DEFAULT_SOLAR_SETTINGS, SolarSystemOptions } from "./solar-settings";
 
 /** A planet specification with the radius of its circular orbit around the sun. */
 interface OrbitingSpec extends PlanetSpec {

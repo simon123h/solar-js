@@ -8,6 +8,10 @@ export interface BinaryGalaxyOptions {
   stars: number;
   /** Whether the galaxy includes a dark matter halo. */
   halo: boolean;
+  /** Extended bulge radius in meters (0 for point masses). */
+  bulge_radius?: number;
+  /** Whether dynamical friction is enabled in the halo. */
+  friction?: boolean;
 }
 
 /** Settings for the binary galaxy scenario. */
@@ -20,6 +24,10 @@ export interface BinaryGalaxySettings {
   stars: number;
   /** Dark matter halo toggle. */
   halo: boolean;
+  /** Extended bulge toggle. */
+  bulge: boolean;
+  /** Dynamical friction toggle. */
+  friction: boolean;
 }
 
 /** Choices for star count in the binary black hole galaxy scenario. */
@@ -35,6 +43,8 @@ export const DEFAULT_BINARY_GALAXY_SETTINGS: BinaryGalaxySettings = {
   mass_ratio: 0.8,
   stars: 3000,
   halo: true,
+  bulge: false,
+  friction: false,
 };
 
 /** Normalizes loaded or user-provided binary galaxy settings. */
@@ -64,16 +74,24 @@ export function normalize_binary_galaxy_settings(value: unknown): BinaryGalaxySe
       : defaults.stars;
 
   const halo = typeof saved.halo === "boolean" ? saved.halo : defaults.halo;
+  const bulge = typeof saved.bulge === "boolean" ? saved.bulge : defaults.bulge;
+  const friction = typeof saved.friction === "boolean" ? saved.friction : defaults.friction;
 
   return {
     separation_kpc,
     mass_ratio,
     stars,
     halo,
+    bulge,
+    friction: halo && friction,
   };
 }
 
 /** Converts binary galaxy settings to options. */
 export function binary_galaxy_options(settings: BinaryGalaxySettings): BinaryGalaxyOptions {
-  return normalize_binary_galaxy_settings(settings);
+  const norm = normalize_binary_galaxy_settings(settings);
+  return {
+    ...norm,
+    bulge_radius: norm.bulge ? 3e9 : 0,
+  };
 }

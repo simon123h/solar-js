@@ -1,8 +1,12 @@
 import { describe, it, expect } from "vitest";
-import createGalaxyCollision, { GALAXY_BULGE_RADIUS, GALAXY_HALO } from "../src/universes/galaxy-collision";
-import { place_encounter } from "../src/encounter";
-import { seeded_random } from "../src/random";
-import { Universe } from "../src/universe";
+import {
+  createGalaxyCollision,
+  GALAXY_BULGE_RADIUS,
+  GALAXY_HALO,
+  place_encounter,
+} from "../src/scenarios/galaxy-collision";
+import { seeded_random } from "../src/core/random";
+import { Universe } from "../src/core/universe";
 
 const full_options = { halo: GALAXY_HALO, bulge_radius: GALAXY_BULGE_RADIUS, stars: 0 };
 

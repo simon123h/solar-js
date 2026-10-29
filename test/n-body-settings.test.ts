@@ -5,7 +5,7 @@ import {
   N_BODY_VELOCITY_OPTIONS,
   normalize_n_body_settings,
   n_body_options,
-} from "../src/n-body-settings";
+} from "../src/scenarios/n-body";
 
 describe("n-body-settings", () => {
   it("should have sensible defaults", () => {

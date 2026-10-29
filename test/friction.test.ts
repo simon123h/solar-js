@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { coulomb_logarithm, friction_factor } from "../src/friction";
+import { coulomb_logarithm, friction_factor } from "../src/core/friction";
 
 describe("friction_factor", () => {
   it("should be zero at rest", () => {

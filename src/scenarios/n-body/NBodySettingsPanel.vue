@@ -5,7 +5,7 @@ import {
   N_BODY_VELOCITY_SCALE_RANGE,
   NBodySettings,
   NBodyVelocityArrangement,
-} from "../n-body-settings";
+} from "./n-body-settings";
 
 const props = defineProps<{
   modelValue: NBodySettings;

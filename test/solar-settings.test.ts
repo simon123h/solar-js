@@ -3,7 +3,7 @@ import {
   DEFAULT_SOLAR_SETTINGS,
   normalize_solar_settings,
   solar_options,
-} from "../src/solar-settings";
+} from "../src/scenarios/solar-system";
 
 describe("solar-settings", () => {
   it("should have sensible defaults", () => {

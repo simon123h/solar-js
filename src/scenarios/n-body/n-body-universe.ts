@@ -1,5 +1,5 @@
-import { Universe } from "../universe";
-import { DEFAULT_N_BODY_SETTINGS, NBodyOptions } from "../n-body-settings";
+import { Universe } from "../../core/universe";
+import { DEFAULT_N_BODY_SETTINGS, NBodyOptions } from "./n-body-settings";
 
 /**
  * Creates an N-Body problem universe.

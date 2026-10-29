@@ -1,6 +1,6 @@
-import { Universe } from "../universe";
-import { Units } from "../units";
-import { CosmicWebOptions, DEFAULT_COSMIC_WEB_SETTINGS } from "../cosmic-web-settings";
+import { Universe } from "../../core/universe";
+import { Units } from "../../core/units";
+import { CosmicWebOptions, DEFAULT_COSMIC_WEB_SETTINGS } from "./cosmic-web-settings";
 
 /** Display units for cosmological scales: Megaparsecs (Mpc) and Gigayears (Gyr). */
 export const COSMIC_WEB_UNITS: Units = {

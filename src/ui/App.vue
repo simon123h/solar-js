@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import StatsBox from "./components/StatsBox.vue";
-import ControlsBar from "./components/ControlsBar.vue";
-import GalaxySettingsPanel from "./components/GalaxySettingsPanel.vue";
-import SolarSettingsPanel from "./components/SolarSettingsPanel.vue";
-import NBodySettingsPanel from "./components/NBodySettingsPanel.vue";
-import CosmicWebSettingsPanel from "./components/CosmicWebSettingsPanel.vue";
-import BinaryGalaxySettingsPanel from "./components/BinaryGalaxySettingsPanel.vue";
-import { GalaxySettings } from "./galaxy-settings";
-import { SolarSystemSettings } from "./solar-settings";
-import { NBodySettings } from "./n-body-settings";
-import { CosmicWebSettings } from "./cosmic-web-settings";
-import { BinaryGalaxySettings } from "./binary-galaxy-settings";
+import { ref } from "vue";
+import StatsBox from "./StatsBox.vue";
+import ControlsBar from "./ControlsBar.vue";
+import { GalaxySettings, GalaxySettingsPanel } from "../scenarios/galaxy-collision";
+import { SolarSystemSettings, SolarSettingsPanel } from "../scenarios/solar-system";
+import { NBodySettings, NBodySettingsPanel } from "../scenarios/n-body";
+import { CosmicWebSettings, CosmicWebSettingsPanel } from "../scenarios/cosmic-web";
+import { BinaryGalaxySettings, BinaryGalaxySettingsPanel } from "../scenarios/binary-galaxy";
 
 const props = defineProps<{
   initialUniverse: string;

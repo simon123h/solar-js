@@ -1,19 +1,40 @@
 import { createApp } from "vue";
-import App from "./App.vue";
-import createSolarSystem from "./universes/solar-system";
-import createGalaxyCollision from "./universes/galaxy-collision";
-import createNBodyUniverse from "./universes/n-body-universe";
-import createCosmicWeb from "./universes/cosmic-web";
-import createBinaryGalaxy from "./universes/binary-galaxy";
-import { Planet } from "./planet";
-import { Universe } from "./universe";
-import { format_time, scale_bar } from "./units";
-import { DEFAULT_SETTINGS, get_local_storage, load_settings, save_settings } from "./settings";
-import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, encounter_problem, galaxy_options } from "./galaxy-settings";
-import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, solar_options } from "./solar-settings";
-import { DEFAULT_N_BODY_SETTINGS, NBodySettings, n_body_options } from "./n-body-settings";
-import { DEFAULT_COSMIC_WEB_SETTINGS, CosmicWebSettings, cosmic_web_options } from "./cosmic-web-settings";
-import { DEFAULT_BINARY_GALAXY_SETTINGS, BinaryGalaxySettings, binary_galaxy_options } from "./binary-galaxy-settings";
+import App from "./ui/App.vue";
+import { Planet } from "./core/planet";
+import { Universe } from "./core/universe";
+import { format_time, scale_bar } from "./core/units";
+import { DEFAULT_SETTINGS, get_local_storage, load_settings, save_settings } from "./core/settings";
+import {
+  DEFAULT_GALAXY_SETTINGS,
+  GalaxySettings,
+  createGalaxyCollision,
+  encounter_problem,
+  galaxy_options,
+} from "./scenarios/galaxy-collision";
+import {
+  DEFAULT_SOLAR_SETTINGS,
+  SolarSystemSettings,
+  createSolarSystem,
+  solar_options,
+} from "./scenarios/solar-system";
+import {
+  DEFAULT_N_BODY_SETTINGS,
+  NBodySettings,
+  createNBodyUniverse,
+  n_body_options,
+} from "./scenarios/n-body";
+import {
+  DEFAULT_COSMIC_WEB_SETTINGS,
+  CosmicWebSettings,
+  createCosmicWeb,
+  cosmic_web_options,
+} from "./scenarios/cosmic-web";
+import {
+  DEFAULT_BINARY_GALAXY_SETTINGS,
+  BinaryGalaxySettings,
+  createBinaryGalaxy,
+  binary_galaxy_options,
+} from "./scenarios/binary-galaxy";
 
 type UniverseFactory = () => Universe;
 

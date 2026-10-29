@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import createSolarSystem from "../src/universes/solar-system";
+import createSolarSystem from "../src/scenarios/solar-system/solar-system";
 import createGalaxyCollision, {
   GALAXY_BULGE_RADIUS,
   GALAXY_ENCOUNTER,
@@ -8,13 +8,13 @@ import createGalaxyCollision, {
   add_velocity_dispersion,
   exponential_disk_radius,
   spiral_angle,
-} from "../src/universes/galaxy-collision";
-import createNBodyUniverse from "../src/universes/n-body-universe";
-import createCosmicWeb, { COSMIC_WEB_UNITS } from "../src/universes/cosmic-web";
-import createBinaryGalaxy from "../src/universes/binary-galaxy";
-import { seeded_random } from "../src/random";
-import { Universe } from "../src/universe";
-import { Planet } from "../src/planet";
+} from "../src/scenarios/galaxy-collision/galaxy-collision";
+import createNBodyUniverse from "../src/scenarios/n-body/n-body-universe";
+import createCosmicWeb, { COSMIC_WEB_UNITS } from "../src/scenarios/cosmic-web/cosmic-web";
+import createBinaryGalaxy from "../src/scenarios/binary-galaxy/binary-galaxy";
+import { seeded_random } from "../src/core/random";
+import { Universe } from "../src/core/universe";
+import { Planet } from "../src/core/planet";
 
 describe("Universe Factories", () => {
   it("should create Solar System", () => {

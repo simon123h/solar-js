@@ -7,8 +7,8 @@ import {
   get_local_storage,
   load_settings,
   save_settings,
-} from "../src/settings";
-import { DEFAULT_GALAXY_SETTINGS, GALAXY_PRESETS } from "../src/galaxy-settings";
+} from "../src/core/settings";
+import { DEFAULT_GALAXY_SETTINGS, GALAXY_PRESETS } from "../src/scenarios/galaxy-collision";
 
 const defaults: Settings = DEFAULT_SETTINGS;
 const is_valid = {
@@ -38,7 +38,7 @@ describe("settings", () => {
       solar: { asteroids: 100, include_pluto: false },
       nbody: { bodies: 200, velocity_arrangement: "circular", velocity_scale: 1.5, varied_masses: true },
       cosmic: { particles: 400, roughness: 4, perturbation_amplitude: 0.3, expansion: 0.5 },
-      binary: { separation_kpc: 5.0, mass_ratio: 0.7, stars: 2000, halo: true },
+      binary: { separation_kpc: 5.0, mass_ratio: 0.7, stars: 2000, halo: true, bulge: false, friction: false },
     });
     expect(load_settings(storage, defaults, is_valid)).toEqual({
       universe: "galaxy-collision",
@@ -47,7 +47,7 @@ describe("settings", () => {
       solar: { asteroids: 100, include_pluto: false },
       nbody: { bodies: 200, velocity_arrangement: "circular", velocity_scale: 1.5, varied_masses: true },
       cosmic: { particles: 400, roughness: 4, perturbation_amplitude: 0.3, expansion: 0.5 },
-      binary: { separation_kpc: 5.0, mass_ratio: 0.7, stars: 2000, halo: true },
+      binary: { separation_kpc: 5.0, mass_ratio: 0.7, stars: 2000, halo: true, bulge: false, friction: false },
     });
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Units, format_time, scale_bar } from "../src/units";
+import { Units, format_time, scale_bar } from "../src/core/units";
 
 const units: Units = { time_unit: "Myr", seconds_per_time_unit: 5e4, length_unit: "kpc", meters_per_length_unit: 1e10 };
 

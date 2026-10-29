@@ -1,7 +1,7 @@
-import { Encounter, place_encounter } from "../encounter";
-import { Planet } from "../planet";
-import { HaloSpec, PlanetSpec, Universe } from "../universe";
-import { Units } from "../units";
+import { Encounter, place_encounter } from "./encounter";
+import { Planet } from "../../core/planet";
+import { HaloSpec, PlanetSpec, Universe } from "../../core/universe";
+import { Units } from "../../core/units";
 
 /** Number of spiral arms of each galaxy. */
 const ARMS = 2;

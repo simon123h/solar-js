@@ -11,10 +11,14 @@ import {
   galaxy_options,
   matching_preset,
   normalize_galaxy_settings,
-} from "../src/galaxy-settings";
-import createGalaxyCollision, { GALAXY_BULGE_RADIUS, GALAXY_ENCOUNTER, GALAXY_HALO, GALAXY_UNITS } from "../src/universes/galaxy-collision";
-import { seeded_random } from "../src/random";
-import { Universe } from "../src/universe";
+  createGalaxyCollision,
+  GALAXY_BULGE_RADIUS,
+  GALAXY_ENCOUNTER,
+  GALAXY_HALO,
+  GALAXY_UNITS,
+} from "../src/scenarios/galaxy-collision";
+import { seeded_random } from "../src/core/random";
+import { Universe } from "../src/core/universe";
 
 /** Everything about a universe that the simulation depends on, to compare two of them. */
 function state(universe: Universe) {

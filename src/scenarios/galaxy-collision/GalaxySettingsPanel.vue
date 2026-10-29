@@ -7,7 +7,7 @@ import {
   PERICENTER_RANGE,
   STAR_COUNTS,
   matching_preset,
-} from "../galaxy-settings";
+} from "./galaxy-settings";
 
 const props = defineProps<{
   modelValue: GalaxySettings;

@@ -4,7 +4,7 @@ import {
   DEFAULT_COSMIC_WEB_SETTINGS,
   normalize_cosmic_web_settings,
   cosmic_web_options,
-} from "../src/cosmic-web-settings";
+} from "../src/scenarios/cosmic-web";
 
 describe("cosmic-web-settings", () => {
   it("should have sensible defaults", () => {

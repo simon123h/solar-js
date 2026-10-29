@@ -1,5 +1,5 @@
 import { DEFAULT_SEPARATION } from "./encounter";
-import { GALAXY_BULGE_RADIUS, GALAXY_ENCOUNTER, GALAXY_HALO, GALAXY_UNITS, GalaxyOptions } from "./universes/galaxy-collision";
+import { GALAXY_BULGE_RADIUS, GALAXY_ENCOUNTER, GALAXY_HALO, GALAXY_UNITS, GalaxyOptions } from "./galaxy-collision";
 
 /** What the user can change about the galaxy collision. */
 export interface GalaxySettings {

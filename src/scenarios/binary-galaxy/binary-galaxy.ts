@@ -4,10 +4,9 @@ import {
   add_velocity_dispersion,
   exponential_disk_radius,
   spiral_angle,
-} from "./galaxy-collision";
-import { Planet } from "../planet";
-import { PlanetSpec, Universe } from "../universe";
-import { BinaryGalaxyOptions, DEFAULT_BINARY_GALAXY_SETTINGS } from "../binary-galaxy-settings";
+} from "../galaxy-collision/galaxy-collision";
+import { PlanetSpec, Universe } from "../../core/universe";
+import { BinaryGalaxyOptions, DEFAULT_BINARY_GALAXY_SETTINGS } from "./binary-galaxy-settings";
 
 const DISK_SCALE_LENGTH = 0.35e11;
 const DISK_MIN_RADIUS = 0.05e11;
@@ -54,6 +53,8 @@ export default function createBinaryGalaxy(
   const v1 = (m2 / totalMass) * vRel;
   const v2 = (m1 / totalMass) * vRel;
 
+  const bulgeRadius = options.bulge_radius ?? 0;
+
   const bh1Spec: PlanetSpec = {
     name: "",
     mass: m1,
@@ -64,7 +65,7 @@ export default function createBinaryGalaxy(
     y: 0,
     vx: 0,
     vy: v1,
-    core_radius: 1e9,
+    core_radius: bulgeRadius > 0 ? bulgeRadius : 1e9,
     highlight: true,
   };
 
@@ -78,15 +79,16 @@ export default function createBinaryGalaxy(
     y: 0,
     vx: 0,
     vy: -v2,
-    core_radius: 1e9,
+    core_radius: bulgeRadius > 0 ? bulgeRadius : 1e9,
     highlight: true,
   };
 
   const [bh1, bh2] = universe.generate_planets([bh1Spec, bh2Spec]);
 
-  // Optional dark matter halo centered on the barycenter (approximated on primary or both)
+  // Optional dark matter halo with optional dynamical friction
   if (options.halo) {
-    universe.add_halo(bh1, GALAXY_HALO.v0, GALAXY_HALO.core_radius, GALAXY_HALO.truncation_radius, false);
+    const friction = options.friction ?? false;
+    universe.add_halo(bh1, GALAXY_HALO.v0, GALAXY_HALO.core_radius, GALAXY_HALO.truncation_radius, friction);
   }
 
   // Generate stellar disk orbiting the binary system

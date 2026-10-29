@@ -1,8 +1,17 @@
-import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, LEGACY_GALAXY_UNIVERSES, normalize_galaxy_settings } from "./galaxy-settings";
-import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, normalize_solar_settings } from "./solar-settings";
-import { DEFAULT_N_BODY_SETTINGS, NBodySettings, normalize_n_body_settings } from "./n-body-settings";
-import { DEFAULT_COSMIC_WEB_SETTINGS, CosmicWebSettings, normalize_cosmic_web_settings } from "./cosmic-web-settings";
-import { DEFAULT_BINARY_GALAXY_SETTINGS, BinaryGalaxySettings, normalize_binary_galaxy_settings } from "./binary-galaxy-settings";
+import {
+  DEFAULT_GALAXY_SETTINGS,
+  GalaxySettings,
+  LEGACY_GALAXY_UNIVERSES,
+  normalize_galaxy_settings,
+} from "../scenarios/galaxy-collision";
+import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, normalize_solar_settings } from "../scenarios/solar-system";
+import { DEFAULT_N_BODY_SETTINGS, NBodySettings, normalize_n_body_settings } from "../scenarios/n-body";
+import { DEFAULT_COSMIC_WEB_SETTINGS, CosmicWebSettings, normalize_cosmic_web_settings } from "../scenarios/cosmic-web";
+import {
+  DEFAULT_BINARY_GALAXY_SETTINGS,
+  BinaryGalaxySettings,
+  normalize_binary_galaxy_settings,
+} from "../scenarios/binary-galaxy";
 
 /** The control pane settings that persist between visits. */
 export interface Settings {

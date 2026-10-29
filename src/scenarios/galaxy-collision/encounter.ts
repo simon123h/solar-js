@@ -1,5 +1,5 @@
-import { Planet } from "./planet";
-import { Universe } from "./universe";
+import { Planet } from "../../core/planet";
+import { Universe } from "../../core/universe";
 
 /** How two galaxies approach each other. */
 export interface Encounter {

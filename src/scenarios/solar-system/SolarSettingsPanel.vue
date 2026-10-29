@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SOLAR_ASTEROID_COUNTS, SolarSystemSettings } from "../solar-settings";
+import { SOLAR_ASTEROID_COUNTS, SolarSystemSettings } from "./solar-settings";
 
 const props = defineProps<{
   modelValue: SolarSystemSettings;
