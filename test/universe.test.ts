@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Universe } from "../src/universe";
 import { Planet } from "../src/planet";
+import { seeded_random } from "../src/random";
 
 describe("Universe", () => {
   it("should initialize correctly", () => {
@@ -314,6 +315,50 @@ describe("Universe", () => {
       ]);
       const G = universe.physics.G;
       const expected = 0.5 * 2e24 * 100 + 0.5 * 1e24 * 400 - (G * 2e24 * 1e24) / 1e9;
+      expect(universe.total_energy() / expected).toBeCloseTo(1, 12);
+    });
+
+    it("should match a brute-force sum over a mix of dummy and regular planets with cores and halos", () => {
+      const random = seeded_random(11);
+      const universe = new Universe();
+      universe.physics.softening = 2e9;
+      for (let i = 0; i < 60; i++) {
+        universe.generate_planets([
+          {
+            name: "P" + i,
+            mass: 1e24 * (1 + 100 * random()),
+            radius: 1,
+            x: 1e11 * (random() - 0.5),
+            y: 1e11 * (random() - 0.5),
+            vx: 1e4 * (random() - 0.5),
+            vy: 1e4 * (random() - 0.5),
+            core_radius: i % 7 === 0 ? 1e10 : 0,
+            is_dummy: i % 3 !== 0,
+          },
+        ]);
+      }
+      universe.add_halo(universe.planets[0], 4e4, 2e10, 2e11);
+      universe.add_halo(universe.planets[3], 3e4, 1e10, 1e11);
+
+      const { G, softening } = universe.physics;
+      let expected = 0;
+      for (const p of universe.planets) expected += p.E_kin();
+      universe.planets.forEach((p1, i) => {
+        universe.planets.slice(i + 1).forEach((p2) => {
+          if (p1.is_dummy && p2.is_dummy) return;
+          const d2 = (p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2 + softening ** 2 + p1.core_radius ** 2 + p2.core_radius ** 2;
+          expected -= (G * p1.mass * p2.mass) / Math.sqrt(d2);
+        });
+      });
+      for (const halo of universe.halos) {
+        const rc2 = halo.core_radius ** 2;
+        const rt2 = halo.truncation_radius ** 2;
+        for (const p of universe.planets) {
+          if (p === halo.center) continue;
+          const d2 = (p.x - halo.center.x) ** 2 + (p.y - halo.center.y) ** 2;
+          expected += p.mass * 0.5 * halo.v0 ** 2 * (rt2 / (rt2 - rc2)) * Math.log((d2 + rc2) / (d2 + rt2));
+        }
+      }
       expect(universe.total_energy() / expected).toBeCloseTo(1, 12);
     });
 

@@ -354,17 +354,20 @@ export class Universe {
     const G = this.physics.G;
     const eps2 = this.physics.softening * this.physics.softening;
     let energy = 0;
-    for (let i = 0; i < this.planets.length; i++) {
-      const p1 = this.planets[i];
-      energy += p1.E_kin();
-      for (let j = i + 1; j < this.planets.length; j++) {
-        const p2 = this.planets[j];
-        if (p1.is_dummy && p2.is_dummy) continue;
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
-        const softening2 = eps2 + p1.core_radius * p1.core_radius + p2.core_radius * p2.core_radius;
-        energy -= (G * p1.mass * p2.mass) / Math.sqrt(dx * dx + dy * dy + softening2);
-      }
+
+    // only pairs with at least one non-dummy planet interact, so dummy-dummy pairs are never visited
+    const nondummy = this.planets.filter((p) => !p.is_dummy);
+    const dummy = this.planets.filter((p) => p.is_dummy);
+    const pair_energy = (p1: Planet, p2: Planet): number => {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const softening2 = eps2 + p1.core_radius * p1.core_radius + p2.core_radius * p2.core_radius;
+      return -(G * p1.mass * p2.mass) / Math.sqrt(dx * dx + dy * dy + softening2);
+    };
+    for (const p of this.planets) energy += p.E_kin();
+    for (let i = 0; i < nondummy.length; i++) {
+      for (let j = i + 1; j < nondummy.length; j++) energy += pair_energy(nondummy[i], nondummy[j]);
+      for (const d of dummy) energy += pair_energy(nondummy[i], d);
     }
     for (const halo of this.halos) {
       for (const p of this.planets) {
