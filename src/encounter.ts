@@ -16,7 +16,7 @@ export interface Encounter {
 }
 
 /** The distance between the galaxies at the start, if no other is given. */
-const DEFAULT_SEPARATION = 600e9;
+export const DEFAULT_SEPARATION = 600e9;
 
 /**
  * Two bodies that move like the given ones, with the same halos and physics, to try out an encounter on.
