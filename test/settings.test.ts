@@ -12,7 +12,7 @@ import { DEFAULT_GALAXY_SETTINGS, GALAXY_PRESETS } from "../src/galaxy-settings"
 
 const defaults: Settings = DEFAULT_SETTINGS;
 const is_valid = {
-  universe: (value: string) => ["solar-system", "galaxy-collision", "cosmic-web"].includes(value),
+  universe: (value: string) => ["solar-system", "galaxy-collision", "cosmic-web", "binary-galaxy"].includes(value),
   speed: (value: number) => [0.5, 1, 2].includes(value),
 };
 
@@ -38,6 +38,7 @@ describe("settings", () => {
       solar: { asteroids: 100, include_pluto: false },
       nbody: { bodies: 200, velocity_arrangement: "circular", velocity_scale: 1.5, varied_masses: true },
       cosmic: { particles: 400, roughness: 4, perturbation_amplitude: 0.3, expansion: 0.5 },
+      binary: { separation_kpc: 5.0, mass_ratio: 0.7, stars: 2000, halo: true },
     });
     expect(load_settings(storage, defaults, is_valid)).toEqual({
       universe: "galaxy-collision",
@@ -46,6 +47,7 @@ describe("settings", () => {
       solar: { asteroids: 100, include_pluto: false },
       nbody: { bodies: 200, velocity_arrangement: "circular", velocity_scale: 1.5, varied_masses: true },
       cosmic: { particles: 400, roughness: 4, perturbation_amplitude: 0.3, expansion: 0.5 },
+      binary: { separation_kpc: 5.0, mass_ratio: 0.7, stars: 2000, halo: true },
     });
   });
 
@@ -69,6 +71,7 @@ describe("settings", () => {
       solar: defaults.solar,
       nbody: defaults.nbody,
       cosmic: defaults.cosmic,
+      binary: defaults.binary,
     });
     const wrong_types = JSON.stringify({ universe: 5, speed: "2" });
     expect(load_settings(fake_storage({ [SETTINGS_KEY]: wrong_types }), defaults, is_valid)).toEqual(defaults);

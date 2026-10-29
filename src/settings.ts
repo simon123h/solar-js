@@ -2,6 +2,7 @@ import { DEFAULT_GALAXY_SETTINGS, GalaxySettings, LEGACY_GALAXY_UNIVERSES, norma
 import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, normalize_solar_settings } from "./solar-settings";
 import { DEFAULT_N_BODY_SETTINGS, NBodySettings, normalize_n_body_settings } from "./n-body-settings";
 import { DEFAULT_COSMIC_WEB_SETTINGS, CosmicWebSettings, normalize_cosmic_web_settings } from "./cosmic-web-settings";
+import { DEFAULT_BINARY_GALAXY_SETTINGS, BinaryGalaxySettings, normalize_binary_galaxy_settings } from "./binary-galaxy-settings";
 
 /** The control pane settings that persist between visits. */
 export interface Settings {
@@ -15,6 +16,8 @@ export interface Settings {
   nbody: NBodySettings;
   /** The settings of the cosmic web structure formation scenario. */
   cosmic: CosmicWebSettings;
+  /** The settings of the binary black hole galaxy scenario. */
+  binary: BinaryGalaxySettings;
 }
 
 /** The settings to start with, before anything has been saved. */
@@ -25,6 +28,7 @@ export const DEFAULT_SETTINGS: Settings = {
   solar: DEFAULT_SOLAR_SETTINGS,
   nbody: DEFAULT_N_BODY_SETTINGS,
   cosmic: DEFAULT_COSMIC_WEB_SETTINGS,
+  binary: DEFAULT_BINARY_GALAXY_SETTINGS,
 };
 
 /** The part of the Storage interface the settings need. */
@@ -73,6 +77,7 @@ export function load_settings(
     if (saved?.solar !== undefined) settings.solar = normalize_solar_settings(saved.solar);
     if (saved?.nbody !== undefined) settings.nbody = normalize_n_body_settings(saved.nbody);
     if (saved?.cosmic !== undefined) settings.cosmic = normalize_cosmic_web_settings(saved.cosmic);
+    if (saved?.binary !== undefined) settings.binary = normalize_binary_galaxy_settings(saved.binary);
   } catch {
     // unreadable storage or corrupt JSON: keep the defaults
   }
