@@ -123,7 +123,8 @@ export function galaxy_options(settings: GalaxySettings): GalaxyOptions {
     spins,
     stars,
     galaxies,
-    encounter: galaxies === 2 && custom_encounter ? { pericenter: pericenter_kpc * GALAXY_UNITS.meters_per_length_unit, eccentricity } : undefined,
+    encounter:
+      galaxies === 2 && custom_encounter ? { pericenter: pericenter_kpc * GALAXY_UNITS.meters_per_length_unit, eccentricity } : undefined,
   };
 }
 

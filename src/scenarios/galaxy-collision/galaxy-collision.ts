@@ -169,7 +169,16 @@ export interface GalaxyOptions {
  * @returns The created Universe instance configured with two or three colliding galaxies.
  */
 export default function createGalaxyCollision(random: () => number = Math.random, options: GalaxyOptions = {}): Universe {
-  const { halo = null, bulge_radius = 0, dispersion = 0.1, spins = [1, 1], friction = false, stars = 3000, galaxies = 2, encounter } = options;
+  const {
+    halo = null,
+    bulge_radius = 0,
+    dispersion = 0.1,
+    spins = [1, 1],
+    friction = false,
+    stars = 3000,
+    galaxies = 2,
+    encounter,
+  } = options;
   const universe = new Universe();
   universe.random = random;
   universe.units = GALAXY_UNITS;
@@ -211,7 +220,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
         color: "#ff6",
         starColor: "#FFC",
         mass: 3.5e30,
-        angle: (Math.PI / 2) + (2 * Math.PI / 3), // 210° (bottom-left)
+        angle: Math.PI / 2 + (2 * Math.PI) / 3, // 210° (bottom-left)
         spin: spins[1] ?? 1,
       },
       {
@@ -219,7 +228,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
         color: "#f472b6", // pink
         starColor: "#fbcfe8",
         mass: 2.5e30,
-        angle: (Math.PI / 2) + (4 * Math.PI / 3), // 330° (bottom-right)
+        angle: Math.PI / 2 + (4 * Math.PI) / 3, // 330° (bottom-right)
         spin: -1, // retrograde for chaotic tidal bridges
       },
     ];
@@ -237,7 +246,7 @@ export default function createGalaxyCollision(random: () => number = Math.random
         vy: -infall_speed * Math.sin(s.angle) + tangential_speed * Math.cos(s.angle),
         highlight: true,
         shadow: 8,
-      }))
+      })),
     );
 
     if (halo) {

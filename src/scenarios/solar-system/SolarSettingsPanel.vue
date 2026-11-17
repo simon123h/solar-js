@@ -22,10 +22,7 @@ function update<K extends keyof SolarSystemSettings>(key: K, value: SolarSystemS
     <h2>Solar System</h2>
     <label class="row">
       <span>Asteroids</span>
-      <select
-        :value="modelValue.asteroids"
-        @change="update('asteroids', Number(($event.target as HTMLSelectElement).value))"
-      >
+      <select :value="modelValue.asteroids" @change="update('asteroids', Number(($event.target as HTMLSelectElement).value))">
         <option v-for="count in SOLAR_ASTEROID_COUNTS" :key="count" :value="count">
           {{ count === 0 ? "None" : count }}
         </option>
@@ -62,7 +59,13 @@ function update<K extends keyof SolarSystemSettings>(key: K, value: SolarSystemS
   color: #e2e8f0;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-size: 0.88em;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   user-select: none;

@@ -11,30 +11,10 @@ import {
   encounter_problem,
   galaxy_options,
 } from "./scenarios/galaxy-collision";
-import {
-  DEFAULT_SOLAR_SETTINGS,
-  SolarSystemSettings,
-  createSolarSystem,
-  solar_options,
-} from "./scenarios/solar-system";
-import {
-  DEFAULT_N_BODY_SETTINGS,
-  NBodySettings,
-  createNBodyUniverse,
-  n_body_options,
-} from "./scenarios/n-body";
-import {
-  DEFAULT_COSMIC_WEB_SETTINGS,
-  CosmicWebSettings,
-  createCosmicWeb,
-  cosmic_web_options,
-} from "./scenarios/cosmic-web";
-import {
-  DEFAULT_BINARY_GALAXY_SETTINGS,
-  BinaryGalaxySettings,
-  createBinaryGalaxy,
-  binary_galaxy_options,
-} from "./scenarios/binary-galaxy";
+import { DEFAULT_SOLAR_SETTINGS, SolarSystemSettings, createSolarSystem, solar_options } from "./scenarios/solar-system";
+import { DEFAULT_N_BODY_SETTINGS, NBodySettings, createNBodyUniverse, n_body_options } from "./scenarios/n-body";
+import { DEFAULT_COSMIC_WEB_SETTINGS, CosmicWebSettings, createCosmicWeb, cosmic_web_options } from "./scenarios/cosmic-web";
+import { DEFAULT_BINARY_GALAXY_SETTINGS, BinaryGalaxySettings, createBinaryGalaxy, binary_galaxy_options } from "./scenarios/binary-galaxy";
 
 type UniverseFactory = () => Universe;
 

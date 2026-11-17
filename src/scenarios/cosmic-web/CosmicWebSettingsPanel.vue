@@ -28,10 +28,7 @@ function update<K extends keyof CosmicWebSettings>(key: K, value: CosmicWebSetti
     <h2>Cosmic Web (Structure Formation)</h2>
     <label class="row">
       <span>Particles</span>
-      <select
-        :value="modelValue.particles"
-        @change="update('particles', Number(($event.target as HTMLSelectElement).value))"
-      >
+      <select :value="modelValue.particles" @change="update('particles', Number(($event.target as HTMLSelectElement).value))">
         <option v-for="count in COSMIC_WEB_PARTICLE_COUNTS" :key="count" :value="count">
           {{ count }}
         </option>
@@ -84,8 +81,8 @@ function update<K extends keyof CosmicWebSettings>(key: K, value: CosmicWebSetti
     </label>
 
     <p class="hud-info">
-      Simulates gravitational Jeans instability from multi-scale Zel'dovich density perturbations,
-      forming dark matter sheets, filaments, and voids over gigayears.
+      Simulates gravitational Jeans instability from multi-scale Zel'dovich density perturbations, forming dark matter sheets, filaments,
+      and voids over gigayears.
     </p>
   </div>
 </template>
@@ -106,7 +103,13 @@ function update<K extends keyof CosmicWebSettings>(key: K, value: CosmicWebSetti
   color: #e2e8f0;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-size: 0.88em;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   user-select: none;

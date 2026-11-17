@@ -18,22 +18,10 @@ const emit = defineEmits<{
 <template>
   <div class="controls-bar">
     <div class="control-group">
-      <button
-        class="btn btn-pause"
-        type="button"
-        title="Pause / Resume simulation"
-        @click="emit('toggle-pause')"
-      >
+      <button class="btn btn-pause" type="button" title="Pause / Resume simulation" @click="emit('toggle-pause')">
         <span>{{ paused ? "Resume" : "Pause" }}</span>
       </button>
-      <button
-        class="btn"
-        type="button"
-        title="Reset scenario"
-        @click="emit('reset')"
-      >
-        Reset
-      </button>
+      <button class="btn" type="button" title="Reset scenario" @click="emit('reset')">Reset</button>
       <div class="select-wrapper">
         <select
           class="speed-select"
@@ -65,14 +53,7 @@ const emit = defineEmits<{
           <option value="binary-galaxy">Binary Black Hole Galaxy</option>
         </select>
       </div>
-      <button
-        class="btn"
-        :class="{ active: settingsOpen }"
-        type="button"
-        @click="emit('toggle-settings')"
-      >
-        Settings
-      </button>
+      <button class="btn" :class="{ active: settingsOpen }" type="button" @click="emit('toggle-settings')">Settings</button>
     </div>
   </div>
 </template>
@@ -85,7 +66,13 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   user-select: none;
 }
 
@@ -111,7 +98,9 @@ const emit = defineEmits<{
   font-size: 0.9em;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;

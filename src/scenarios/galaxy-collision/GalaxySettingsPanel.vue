@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import {
-  ECCENTRICITY_RANGE,
-  GALAXY_PRESETS,
-  GalaxySettings,
-  PERICENTER_RANGE,
-  STAR_COUNTS,
-  matching_preset,
-} from "./galaxy-settings";
+import { ECCENTRICITY_RANGE, GALAXY_PRESETS, GalaxySettings, PERICENTER_RANGE, STAR_COUNTS, matching_preset } from "./galaxy-settings";
 
 const props = defineProps<{
   modelValue: GalaxySettings;
@@ -67,19 +60,11 @@ function updateSpin(index: 0 | 1, value: number) {
     <fieldset>
       <legend>Physics</legend>
       <label>
-        <input
-          type="checkbox"
-          :checked="modelValue.halo"
-          @change="update('halo', ($event.target as HTMLInputElement).checked)"
-        />
+        <input type="checkbox" :checked="modelValue.halo" @change="update('halo', ($event.target as HTMLInputElement).checked)" />
         Dark matter halos
       </label>
       <label>
-        <input
-          type="checkbox"
-          :checked="modelValue.bulge"
-          @change="update('bulge', ($event.target as HTMLInputElement).checked)"
-        />
+        <input type="checkbox" :checked="modelValue.bulge" @change="update('bulge', ($event.target as HTMLInputElement).checked)" />
         Extended bulges
       </label>
       <label>
@@ -182,7 +167,13 @@ function updateSpin(index: 0 | 1, value: number) {
   color: #e2e8f0;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-size: 0.88em;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   user-select: none;

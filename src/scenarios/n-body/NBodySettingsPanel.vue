@@ -28,10 +28,7 @@ function update<K extends keyof NBodySettings>(key: K, value: NBodySettings[K]) 
     <h2>N-Body Problem</h2>
     <label class="row">
       <span>Number of bodies</span>
-      <select
-        :value="modelValue.bodies"
-        @change="update('bodies', Number(($event.target as HTMLSelectElement).value))"
-      >
+      <select :value="modelValue.bodies" @change="update('bodies', Number(($event.target as HTMLSelectElement).value))">
         <option v-for="count in N_BODY_COUNTS" :key="count" :value="count">
           {{ count }}
         </option>
@@ -96,7 +93,13 @@ function update<K extends keyof NBodySettings>(key: K, value: NBodySettings[K]) 
   color: #e2e8f0;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-size: 0.88em;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   user-select: none;

@@ -54,7 +54,7 @@ export default function createCosmicWeb(
   for (let m = 0; m < numModes; m++) {
     const angle = random() * Math.PI * 2;
     // wave numbers ranging from fundamental box frequencies to intermediate scales
-    const k = (2 * Math.PI / boxMeters) * (1 + random() * options.roughness);
+    const k = ((2 * Math.PI) / boxMeters) * (1 + random() * options.roughness);
     modes.push({
       kx: Math.cos(angle) * k,
       ky: Math.sin(angle) * k,

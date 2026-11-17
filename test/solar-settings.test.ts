@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  DEFAULT_SOLAR_SETTINGS,
-  normalize_solar_settings,
-  solar_options,
-} from "../src/scenarios/solar-system";
+import { DEFAULT_SOLAR_SETTINGS, normalize_solar_settings, solar_options } from "../src/scenarios/solar-system";
 
 describe("solar-settings", () => {
   it("should have sensible defaults", () => {

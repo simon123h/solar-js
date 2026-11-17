@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  createGalaxyCollision,
-  GALAXY_BULGE_RADIUS,
-  GALAXY_HALO,
-  place_encounter,
-} from "../src/scenarios/galaxy-collision";
+import { createGalaxyCollision, GALAXY_BULGE_RADIUS, GALAXY_HALO, place_encounter } from "../src/scenarios/galaxy-collision";
 import { seeded_random } from "../src/core/random";
 import { Universe } from "../src/core/universe";
 

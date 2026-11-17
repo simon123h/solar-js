@@ -19,13 +19,7 @@ describe("n-body-settings", () => {
 
   it("should contain supported velocity options and body counts", () => {
     expect(N_BODY_COUNTS).toContain(400);
-    expect(N_BODY_VELOCITY_OPTIONS.map((o) => o.id)).toEqual([
-      "stationary",
-      "circular",
-      "inward",
-      "outward",
-      "random",
-    ]);
+    expect(N_BODY_VELOCITY_OPTIONS.map((o) => o.id)).toEqual(["stationary", "circular", "inward", "outward", "random"]);
   });
 
   it("should normalize valid settings", () => {

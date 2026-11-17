@@ -7,10 +7,7 @@ import { DEFAULT_N_BODY_SETTINGS, NBodyOptions } from "./n-body-settings";
  * @param options - Configuration options for the n-body simulation.
  * @returns The created Universe instance configured with random bodies.
  */
-export default function createNBodyUniverse(
-  random: () => number = Math.random,
-  options: NBodyOptions = DEFAULT_N_BODY_SETTINGS,
-): Universe {
+export default function createNBodyUniverse(random: () => number = Math.random, options: NBodyOptions = DEFAULT_N_BODY_SETTINGS): Universe {
   const universe = new Universe();
   universe.random = random;
   universe.physics.G = 6.674e-11;
@@ -87,4 +84,3 @@ export default function createNBodyUniverse(
 
   return universe;
 }
-

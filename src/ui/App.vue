@@ -140,21 +140,9 @@ defineExpose({
       :message="galaxyMessage"
       @update:model-value="onUpdateGalaxy"
     />
-    <SolarSettingsPanel
-      v-else-if="universe === 'solar-system'"
-      :model-value="solarSettings"
-      @update:model-value="onUpdateSolar"
-    />
-    <NBodySettingsPanel
-      v-else-if="universe === 'n-body-universe'"
-      :model-value="nBodySettings"
-      @update:model-value="onUpdateNBody"
-    />
-    <CosmicWebSettingsPanel
-      v-else-if="universe === 'cosmic-web'"
-      :model-value="cosmicSettings"
-      @update:model-value="onUpdateCosmic"
-    />
+    <SolarSettingsPanel v-else-if="universe === 'solar-system'" :model-value="solarSettings" @update:model-value="onUpdateSolar" />
+    <NBodySettingsPanel v-else-if="universe === 'n-body-universe'" :model-value="nBodySettings" @update:model-value="onUpdateNBody" />
+    <CosmicWebSettingsPanel v-else-if="universe === 'cosmic-web'" :model-value="cosmicSettings" @update:model-value="onUpdateCosmic" />
     <BinaryGalaxySettingsPanel
       v-else-if="universe === 'binary-galaxy'"
       :model-value="binarySettings"

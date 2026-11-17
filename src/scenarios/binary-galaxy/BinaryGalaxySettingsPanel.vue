@@ -63,10 +63,7 @@ function update<K extends keyof BinaryGalaxySettings>(key: K, value: BinaryGalax
       <legend>Galactic Disk & Physics</legend>
       <label class="row">
         <span>Stars</span>
-        <select
-          :value="modelValue.stars"
-          @change="update('stars', Number(($event.target as HTMLSelectElement).value))"
-        >
+        <select :value="modelValue.stars" @change="update('stars', Number(($event.target as HTMLSelectElement).value))">
           <option v-for="count in BINARY_GALAXY_STAR_COUNTS" :key="count" :value="count">
             {{ count }}
           </option>
@@ -74,20 +71,12 @@ function update<K extends keyof BinaryGalaxySettings>(key: K, value: BinaryGalax
       </label>
 
       <label>
-        <input
-          type="checkbox"
-          :checked="modelValue.halo"
-          @change="update('halo', ($event.target as HTMLInputElement).checked)"
-        />
+        <input type="checkbox" :checked="modelValue.halo" @change="update('halo', ($event.target as HTMLInputElement).checked)" />
         Dark matter halo
       </label>
 
       <label>
-        <input
-          type="checkbox"
-          :checked="modelValue.bulge"
-          @change="update('bulge', ($event.target as HTMLInputElement).checked)"
-        />
+        <input type="checkbox" :checked="modelValue.bulge" @change="update('bulge', ($event.target as HTMLInputElement).checked)" />
         Extended bulge
       </label>
 
@@ -103,8 +92,8 @@ function update<K extends keyof BinaryGalaxySettings>(key: K, value: BinaryGalax
     </fieldset>
 
     <p class="hud-info">
-      Simulates a galactic disk orbiting a supermassive binary black hole pair at its core.
-      Observe gravitational perturbations and stellar ejections near the pericenter.
+      Simulates a galactic disk orbiting a supermassive binary black hole pair at its core. Observe gravitational perturbations and stellar
+      ejections near the pericenter.
     </p>
   </div>
 </template>
@@ -125,7 +114,13 @@ function update<K extends keyof BinaryGalaxySettings>(key: K, value: BinaryGalax
   color: #e2e8f0;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-size: 0.88em;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   user-select: none;
